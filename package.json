@@ -1,0 +1,53 @@
+{
+  "name": "@takodata/ai-sdk",
+  "version": "1.0.0",
+  "description": "Tako knowledge search tool for Vercel AI SDK",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "tsx test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "tako",
+    "knowledge-search",
+    "ai-sdk",
+    "vercel",
+    "data-visualization",
+    "ai",
+    "tools"
+  ],
+  "author": "Tako",
+  "license": "MIT",
+  "homepage": "https://tako.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TakoData/ai-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TakoData/ai-sdk/issues"
+  },
+  "peerDependencies": {
+    "ai": "^6.0.18"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.8",
+    "@ai-sdk/gateway": "^3.0.9",
+    "@ai-sdk/openai": "^3.0.7",
+    "@ai-sdk/provider-utils": "^4.0.4",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
