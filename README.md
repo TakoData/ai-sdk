@@ -5,7 +5,7 @@ Add powerful knowledge search with data visualizations to your AI applications u
 ## Installation
 
 ```bash
-npm install @takodata/ai-sdk ai
+npm install @takoviz/ai-sdk ai
 ```
 
 ## Setup
@@ -19,7 +19,7 @@ export TAKO_API_KEY=your_api_key_here
 ## Quick Start
 
 ```typescript
-import { takoSearch } from '@takodata/ai-sdk';
+import { takoSearch } from '@takoviz/ai-sdk';
 import { generateText } from 'ai';
 
 const { text } = await generateText({

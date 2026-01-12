@@ -4,7 +4,7 @@ After publishing to npm, follow these steps to add Tako to the official Vercel A
 
 ## Prerequisites
 
-- ✅ Package published to npm at `@takodata/ai-sdk`
+- ✅ Package published to npm at `@takoviz/ai-sdk`
 - ✅ README with clear documentation
 - ✅ Working code example tested
 - ✅ API key instructions in README
@@ -34,14 +34,14 @@ Edit `content/tools-registry/registry.ts` and add this entry to the tools array:
   slug: 'tako-search',
   name: 'Tako Search',
   description: 'Search Tako\'s knowledge base for data visualizations, insights, and well-sourced information with charts and analytics.',
-  packageName: '@takodata/ai-sdk',
+  packageName: '@takoviz/ai-sdk',
   installCommand: {
-    pnpm: 'pnpm add @takodata/ai-sdk',
-    npm: 'npm install @takodata/ai-sdk',
-    yarn: 'yarn add @takodata/ai-sdk',
-    bun: 'bun add @takodata/ai-sdk',
+    pnpm: 'pnpm add @takoviz/ai-sdk',
+    npm: 'npm install @takoviz/ai-sdk',
+    yarn: 'yarn add @takoviz/ai-sdk',
+    bun: 'bun add @takoviz/ai-sdk',
   },
-  codeExample: `import { takoSearch } from '@takodata/ai-sdk';
+  codeExample: `import { takoSearch } from '@takoviz/ai-sdk';
 import { generateText } from 'ai';
 
 const { text } = await generateText({
@@ -55,7 +55,7 @@ const { text } = await generateText({
 
 console.log(text);`,
   docsUrl: 'https://github.com/TakoData/ai-sdk#readme',
-  npmUrl: 'https://www.npmjs.com/package/@takodata/ai-sdk',
+  npmUrl: 'https://www.npmjs.com/package/@takoviz/ai-sdk',
   websiteUrl: 'https://tako.com',
   apiKeyEnvName: 'TAKO_API_KEY',
   apiKeyUrl: 'https://trytako.com',
@@ -90,7 +90,7 @@ Then:
    Tako Search provides access to Tako's knowledge base with data visualizations,
    charts, and well-sourced analytics for AI applications.
 
-   - Package: @takodata/ai-sdk
+   - Package: @takoviz/ai-sdk
    - Docs: https://github.com/TakoData/ai-sdk
    - Website: https://tako.com
    ```
