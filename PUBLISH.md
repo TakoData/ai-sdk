@@ -18,11 +18,11 @@
    npm publish --access public
    ```
 
-   The package will be published as `@takodata/ai-sdk` version `1.0.0`.
+   The package will be published as `@takoviz/ai-sdk` version `1.0.0`.
 
 4. **Verify publication**:
-   - Check at: https://www.npmjs.com/package/@takodata/ai-sdk
-   - Test installation: `npm install @takodata/ai-sdk`
+   - Check at: https://www.npmjs.com/package/@takoviz/ai-sdk
+   - Test installation: `npm install @takoviz/ai-sdk`
 
 ---
 

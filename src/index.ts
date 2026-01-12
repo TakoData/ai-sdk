@@ -6,7 +6,7 @@ export function takoSearch(config: TakoSearchConfig = {}) {
   const {
     apiKey = process.env.TAKO_API_KEY || process.env.TAKO_API_TOKEN,
     sourceIndexes = ["tako", "web"],
-    searchEffort = "fast",
+    searchEffort = "auto",
     outputSettings,
     countryCode = "US",
     locale = "en-US",

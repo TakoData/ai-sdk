@@ -1,5 +1,5 @@
 {
-  "name": "@takodata/ai-sdk",
+  "name": "@takoviz/ai-sdk",
   "version": "1.0.0",
   "description": "Tako knowledge search tool for Vercel AI SDK",
   "main": "./dist/index.js",
