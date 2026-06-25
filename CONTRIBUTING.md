@@ -27,6 +27,11 @@ This repo uses [Conventional Commits](https://www.conventionalcommits.org/) and
 - **Merging that release PR** tags the release and triggers the publish workflow,
   which runs `pnpm publish --no-git-checks --provenance --access public`.
 
+> **Merge PRs with squash or rebase — not a merge commit.** release-please
+> reads `main`'s first-parent history. A merge commit keeps a PR's conventional
+> commits off that line, so release-please sees nothing and opens no release PR.
+> Squash (or rebase) puts the conventional commit(s) directly on `main`.
+
 Publishing requires an `NPM_TOKEN` repo secret (an npm automation token with
 publish rights to `@takoviz`). Until it's set, the publish job fails on the
 release run while versioning/changelog/GitHub Release still succeed.
