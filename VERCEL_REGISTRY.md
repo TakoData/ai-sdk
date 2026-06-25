@@ -1,104 +1,52 @@
-# Adding Tako to Vercel AI Registry
+# Submitting Tako to the AI SDK Tools Registry
 
-After publishing to npm, follow these steps to add Tako to the official Vercel AI tools registry.
+After `@takoviz/ai-sdk` 2.0.0 is published to npm, submit it to the AI SDK Tools
+Registry.
+
+> ⚠️ **Verify the current process before submitting.** The registry is the
+> shadcn-based **AI SDK Tools Registry** (https://ai-sdk.dev/tools-registry,
+> mirrored at https://ai-tools-registry.vercel.app / https://ai-sdk-agents.vercel.app),
+> which distributes tool *files* via the shadcn CLI. This is **not** the old
+> `vercel/ai` `content/tools-registry/registry.ts` array. Open the live registry's
+> GitHub repo + contribution guide and confirm the exact entry format before
+> opening a PR.
 
 ## Prerequisites
 
-- ✅ Package published to npm at `@takoviz/ai-sdk`
-- ✅ README with clear documentation
-- ✅ Working code example tested
-- ✅ API key instructions in README
+- Package published to npm at `@takoviz/ai-sdk`
+- README with clear setup + examples
+- `TAKO_API_KEY` documented
 
-## Steps
+## Draft entry content (adapt to the live registry's schema)
 
-### 1. Fork and Clone Vercel AI Repository
-
-```bash
-git clone https://github.com/vercel/ai.git
-cd ai
-pnpm install
-```
-
-### 2. Create Feature Branch
-
-```bash
-git checkout -b feat/add-tool-tako-search
-```
-
-### 3. Add Tool Entry
-
-Edit `content/tools-registry/registry.ts` and add this entry to the tools array:
+- **name:** Tako
+- **slug:** `tako`
+- **package:** `@takoviz/ai-sdk`
+- **description:** "Search Tako's knowledge base for visualized data and well-sourced
+  answers, and download the underlying data behind any result. Tools: takoSearch,
+  takoAnswer, takoContents."
+- **api key:** env `TAKO_API_KEY`, from https://trytako.com
+- **code example:**
 
 ```typescript
-{
-  slug: 'tako-search',
-  name: 'Tako Search',
-  description: 'Search Tako\'s knowledge base for data visualizations, insights, and well-sourced information with charts and analytics.',
-  packageName: '@takoviz/ai-sdk',
-  installCommand: {
-    pnpm: 'pnpm add @takoviz/ai-sdk',
-    npm: 'npm install @takoviz/ai-sdk',
-    yarn: 'yarn add @takoviz/ai-sdk',
-    bun: 'bun add @takoviz/ai-sdk',
-  },
-  codeExample: `import { takoSearch } from '@takoviz/ai-sdk';
-import { generateText } from 'ai';
+import { takoAnswer } from '@takoviz/ai-sdk';
+import { openai } from '@ai-sdk/openai';
+import { generateText, stepCountIs } from 'ai';
 
 const { text } = await generateText({
-  model: 'openai/gpt-4o-mini',
-  prompt: 'What is the stock price of Nvidia?',
-  tools: {
-    takoSearch: takoSearch(),
-  },
-  maxSteps: 5,
+  model: openai('gpt-4o-mini'),
+  prompt: 'Did AMD or Nvidia grow headcount faster over the last decade?',
+  tools: { tako_answer: takoAnswer() },
+  stopWhen: stepCountIs(5),
 });
 
-console.log(text);`,
-  docsUrl: 'https://github.com/TakoData/ai-sdk#readme',
-  npmUrl: 'https://www.npmjs.com/package/@takoviz/ai-sdk',
-  websiteUrl: 'https://tako.com',
-  apiKeyEnvName: 'TAKO_API_KEY',
-  apiKeyUrl: 'https://trytako.com',
-  tags: ['search', 'data', 'visualization', 'analytics'],
-},
+console.log(text);
 ```
 
-### 4. Test Locally
+## Open questions for sub-project B
 
-```bash
-pnpm dev
-```
-
-Navigate to the tools registry page and verify your tool appears correctly.
-
-### 5. Create Pull Request
-
-```bash
-git add content/tools-registry/registry.ts
-git commit -m "feat(tools-registry): add tako-search"
-git push origin feat/add-tool-tako-search
-```
-
-Then:
-1. Go to https://github.com/vercel/ai
-2. Click "New Pull Request"
-3. Use title: `feat(tools-registry): add tako-search`
-4. Description:
-   ```
-   Adds Tako Search tool to the registry.
-
-   Tako Search provides access to Tako's knowledge base with data visualizations,
-   charts, and well-sourced analytics for AI applications.
-
-   - Package: @takoviz/ai-sdk
-   - Docs: https://github.com/TakoData/ai-sdk
-   - Website: https://tako.com
-   ```
-
-### 6. Wait for Review
-
-The Vercel team will review and merge your PR. Once merged, Tako will appear in the official AI SDK tools registry at https://sdk.vercel.ai/docs/ai-sdk-ui/tools-registry!
-
-## Reference
-
-Official guide: https://github.com/vercel/ai/blob/main/contributing/add-new-tool-to-registry.md
+- Does the registry entry reference the published npm package, or vendor tool
+  files via the shadcn CLI?
+- Single `tako` entry vs. per-tool entries (`tako-search`, `tako-answer`, `tako-contents`)?
+- Fork/PR target: the live registry's GitHub repo (confirm URL), following its
+  CONTRIBUTING guide.
