@@ -1,6 +1,6 @@
 {
   "name": "@takoviz/ai-sdk",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Tako knowledge search, answer, and contents tools for the Vercel AI SDK",
   "type": "module",
   "main": "./dist/index.js",
@@ -12,7 +12,9 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "typecheck": "tsc --noEmit -p tsconfig.check.json",
@@ -20,12 +22,25 @@
     "test:watch": "vitest",
     "prepublishOnly": "pnpm build"
   },
-  "keywords": ["tako", "knowledge-search", "ai-sdk", "vercel", "data-visualization", "ai", "tools"],
+  "keywords": [
+    "tako",
+    "knowledge-search",
+    "ai-sdk",
+    "vercel",
+    "data-visualization",
+    "ai",
+    "tools"
+  ],
   "author": "Tako",
   "license": "MIT",
   "homepage": "https://trytako.com",
-  "repository": { "type": "git", "url": "git+https://github.com/TakoData/ai-sdk.git" },
-  "bugs": { "url": "https://github.com/TakoData/ai-sdk/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TakoData/ai-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TakoData/ai-sdk/issues"
+  },
   "packageManager": "pnpm@11.9.0",
   "peerDependencies": {
     "ai": "^6.0.18 || ^7.0.0",
