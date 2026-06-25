@@ -1,6 +1,6 @@
 import type { TakoRetrievalConfig } from "./types";
 
-const DEFAULT_BASE_URL = "https://trytako.com";
+const DEFAULT_BASE_URL = "https://tako.com";
 
 export function resolveApiKey(config: { apiKey?: string }): string | undefined {
   return config.apiKey ?? process.env.TAKO_API_KEY ?? process.env.TAKO_API_TOKEN;

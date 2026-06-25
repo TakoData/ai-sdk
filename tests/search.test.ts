@@ -12,7 +12,7 @@ describe("takoSearch", () => {
     const t = takoSearch({ apiKey: "key" });
     const res = await runTool(t, { query: "nvidia revenue" });
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://trytako.com/api/v3/search");
+    expect(url).toBe("https://tako.com/api/v3/search");
     expect((init.headers as Record<string, string>)["X-API-Key"]).toBe("key");
     expect(JSON.parse(init.body as string)).toEqual({
       query: "nvidia revenue",
