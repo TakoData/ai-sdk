@@ -1,0 +1,26 @@
+# Changelog
+
+## [2.0.0](https://github.com/TakoData/ai-sdk/compare/ai-sdk-v1.0.1...ai-sdk-v2.0.0) (2026-06-25)
+
+A full refresh of `@takoviz/ai-sdk` onto Tako's GA public API — shipped as three Vercel AI SDK tools — with a modern ESM/pnpm toolchain and automated releases ([#2](https://github.com/TakoData/ai-sdk/pull/2)).
+
+### ⚠ BREAKING CHANGES
+
+* The single `takoSearch` tool that called the now-internal `POST /api/v1/knowledge_search` is replaced by three tools targeting Tako's GA endpoints. The legacy `TakoKnowledgeCard` / `TakoSearchResponse` / `TakoVisualizationData` types and the old `searchEffort: "auto"` / `connected_data` config are removed; response types now mirror the new API wire shapes.
+
+### Features
+
+* **`takoSearch()`** → `POST /api/v3/search`: Tako knowledge cards (charts/metrics with sources) plus web results — fast retrieval, no synthesis.
+* **`takoAnswer()`** → `POST /api/v1/answer`: a grounded, citation-backed answer plus the backing cards and web results.
+* **`takoContents()`** → `POST /api/v1/contents`: the data behind a result URL — a card's CSV or a web page's extracted text — via `url` (short-lived presigned link, default) or `inline` (content in the response, CSV capped at 1000 rows) mode.
+* `baseUrl` config for staging / self-host; `apiKey` falls back to the `TAKO_API_KEY` / `TAKO_API_TOKEN` env vars.
+* Works with both `ai` v6 and v7 (`peerDependencies: ai@^6.0.18 || ^7.0.0`).
+
+### Build & Tooling
+
+* ESM-only package built with tsup; pnpm; **zero runtime dependencies** (`ai` and `zod` are peer dependencies).
+* Automated releases via release-please with npm provenance publishing, plus PR CI (build + typecheck + vitest).
+
+### Miscellaneous Chores
+
+* trigger 2.0.0 release ([#3](https://github.com/TakoData/ai-sdk/issues/3)) ([cf4697d](https://github.com/TakoData/ai-sdk/commit/cf4697d26c63ae96d3f1c09cf90f3fe47830fea9))
