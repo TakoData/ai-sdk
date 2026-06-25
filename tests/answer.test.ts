@@ -12,7 +12,7 @@ describe("takoAnswer", () => {
     const t = takoAnswer({ apiKey: "key" });
     const res = await runTool(t, { query: "did AMD or Nvidia grow headcount faster?" });
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://trytako.com/api/v1/answer");
+    expect(url).toBe("https://tako.com/api/v1/answer");
     expect(JSON.parse(init.body as string)).toEqual({
       query: "did AMD or Nvidia grow headcount faster?",
       effort: "fast",

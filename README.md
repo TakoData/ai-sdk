@@ -10,7 +10,7 @@ npm install @takoviz/ai-sdk ai
 
 ## Setup
 
-Get an API key from the [Tako dashboard](https://trytako.com) and set it as an environment variable:
+Get an API key from the [Tako developer console](https://developer.tako.com/console/api-keys) and set it as an environment variable:
 
 ```bash
 export TAKO_API_KEY=your_api_key_here
@@ -60,7 +60,7 @@ const tools = {
 ```typescript
 takoSearch({
   apiKey: 'your_api_key',      // optional; defaults to TAKO_API_KEY
-  baseUrl: 'https://trytako.com', // optional; override for staging
+  baseUrl: 'https://tako.com', // optional; override for staging
   effort: 'fast',              // 'fast' (default) | 'instant' | 'deep'
   sources: {                   // a source is searched iff its key is present; omit to search both
     tako: { count: 5, includeContents: false, deferDataRetrieval: false },
@@ -81,7 +81,7 @@ takoSearch({
 ```typescript
 takoContents({
   apiKey: 'your_api_key',
-  baseUrl: 'https://trytako.com',
+  baseUrl: 'https://tako.com',
   mode: 'url',                 // 'url' (default) → presigned link; 'inline' → content in the response
 });
 ```
@@ -126,6 +126,6 @@ MIT
 
 ## Links
 
-- [Tako documentation](https://docs.trytako.com)
+- [Tako documentation](https://docs.tako.com)
 - [Vercel AI SDK](https://sdk.vercel.ai/docs)
 - [GitHub repository](https://github.com/TakoData/ai-sdk)

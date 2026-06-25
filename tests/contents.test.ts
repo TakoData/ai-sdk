@@ -15,7 +15,7 @@ describe("takoContents", () => {
     const t = takoContents({ apiKey: "key" });
     const res = await runTool(t, { url: "https://tako.com/card/x" });
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://trytako.com/api/v1/contents");
+    expect(url).toBe("https://tako.com/api/v1/contents");
     expect(JSON.parse(init.body as string)).toEqual({ url: "https://tako.com/card/x", mode: "url" });
     expect((res as any).contents[0].format).toBe("csv");
   });

@@ -12,7 +12,7 @@ export type TakoKnowledgeCardRelevance = "High" | "Medium" | "Low";
 export interface TakoBaseConfig {
   /** Tako API key. Falls back to TAKO_API_KEY / TAKO_API_TOKEN env vars. */
   apiKey?: string;
-  /** API base URL. Default "https://trytako.com". */
+  /** API base URL. Default "https://tako.com". */
   baseUrl?: string;
 }
 
