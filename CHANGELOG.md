@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/TakoData/ai-sdk/compare/ai-sdk-v2.0.0...ai-sdk-v2.0.1) (2026-06-25)
+
+
+### Bug Fixes
+
+* standardize on the tako.com host ([#5](https://github.com/TakoData/ai-sdk/issues/5)) ([5a514cf](https://github.com/TakoData/ai-sdk/commit/5a514cf2cd1343f443f78dec3318c469a5619309))
+
 ## [2.0.0](https://github.com/TakoData/ai-sdk/compare/ai-sdk-v1.0.1...ai-sdk-v2.0.0) (2026-06-25)
 
 A full refresh of `@takoviz/ai-sdk` onto Tako's GA public API — shipped as three Vercel AI SDK tools — with a modern ESM/pnpm toolchain and automated releases ([#2](https://github.com/TakoData/ai-sdk/pull/2)).
