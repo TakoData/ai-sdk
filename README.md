@@ -115,6 +115,8 @@ import type {
   TakoAnswerResult,
   TakoContentsResult,
   TakoCard,
+  TakoWebResult,
+  TakoContentItem,
 } from '@takoviz/ai-sdk';
 ```
 
