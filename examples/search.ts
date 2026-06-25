@@ -1,4 +1,4 @@
-import { generateText, stepCountIs } from "ai";
+import { generateText, isStepCount } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { takoSearch } from "../src/index";
 
@@ -8,7 +8,7 @@ async function main() {
     model: openai("gpt-4o-mini"),
     prompt: "Compare Nvidia and AMD full-time employee counts since 2013.",
     tools: { tako_search: takoSearch() },
-    stopWhen: stepCountIs(5),
+    stopWhen: isStepCount(5),
   });
   console.log("Answer:\n", text);
   console.log("\nSteps:", steps.length);

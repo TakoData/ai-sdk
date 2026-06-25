@@ -1,11 +1,13 @@
-import { tool } from "ai";
+import { tool, type Tool } from "ai";
 import { z } from "zod";
 import { callTako } from "../client";
 import { buildSearchRequestBody, resolveApiKey, resolveBaseUrl } from "../request";
 import type { TakoRetrievalConfig, TakoSearchResult } from "../types";
 
 /** Tako fast-pipeline search: returns Tako cards + web results, no LLM synthesis. */
-export function takoSearch(config: TakoRetrievalConfig = {}) {
+export function takoSearch(
+  config: TakoRetrievalConfig = {},
+): Tool<{ query: string }, TakoSearchResult> {
   return tool({
     description:
       "Search Tako for live data and well-sourced facts — structured knowledge cards " +

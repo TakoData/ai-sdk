@@ -1,7 +1,9 @@
 import { takoSearch, takoContents } from "../src/index";
 
 // Run: pnpm exec tsx --env-file=.env examples/contents.ts
-const opts = { toolCallId: "example", messages: [] };
+// Cast: calling a tool's execute() directly (outside generateText) needs a
+// ToolExecutionOptions stub; the fields below are all our tools actually use.
+const opts = { toolCallId: "example", messages: [] } as any;
 
 async function main() {
   const search = takoSearch();

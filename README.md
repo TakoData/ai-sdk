@@ -29,13 +29,13 @@ export TAKO_API_KEY=your_api_key_here
 ```typescript
 import { takoAnswer } from '@takoviz/ai-sdk';
 import { openai } from '@ai-sdk/openai';
-import { generateText, stepCountIs } from 'ai';
+import { generateText, isStepCount } from 'ai';
 
 const { text } = await generateText({
   model: openai('gpt-4o-mini'),
   prompt: 'Did AMD or Nvidia grow headcount faster over the last decade?',
   tools: { tako_answer: takoAnswer() },
-  stopWhen: stepCountIs(5),
+  stopWhen: isStepCount(5),
 });
 
 console.log(text);

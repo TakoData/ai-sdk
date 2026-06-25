@@ -1,4 +1,4 @@
-import { generateText, stepCountIs } from "ai";
+import { generateText, isStepCount } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { takoAnswer } from "../src/index";
 
@@ -8,7 +8,7 @@ async function main() {
     model: openai("gpt-4o-mini"),
     prompt: "Did AMD or Nvidia grow its headcount faster over the last decade?",
     tools: { tako_answer: takoAnswer({ effort: "deep" }) },
-    stopWhen: stepCountIs(5),
+    stopWhen: isStepCount(5),
   });
   console.log(text);
 }

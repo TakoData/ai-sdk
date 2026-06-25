@@ -1,11 +1,13 @@
-import { tool } from "ai";
+import { tool, type Tool } from "ai";
 import { z } from "zod";
 import { callTako } from "../client";
 import { resolveApiKey, resolveBaseUrl } from "../request";
 import type { TakoContentsConfig, TakoContentsResult } from "../types";
 
 /** Download the data behind a result URL: a Tako card's CSV or a web page's text. */
-export function takoContents(config: TakoContentsConfig = {}) {
+export function takoContents(
+  config: TakoContentsConfig = {},
+): Tool<{ url: string }, TakoContentsResult> {
   return tool({
     description:
       "Fetch the underlying data behind a result URL — a Tako card's webpage_url yields a CSV " +
