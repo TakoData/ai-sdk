@@ -1,2 +1,26 @@
-// Temporary placeholder — replaced with the tool barrel (takoSearch/takoAnswer/takoContents) in a later task.
-export {};
+export { takoSearch } from "./tools/search";
+export { takoAnswer } from "./tools/answer";
+export { takoContents } from "./tools/contents";
+
+export type {
+  TakoBaseConfig,
+  TakoRetrievalConfig,
+  TakoContentsConfig,
+  TakoSourceOptions,
+  TakoCardSourceOptions,
+  TakoSearchEffort,
+  TakoContentsMode,
+  TakoContentFormat,
+  TakoCardSourceIndex,
+  TakoKnowledgeCardRelevance,
+  TakoResultContent,
+  TakoCardSourceIndexSegment,
+  TakoKnowledgeCardSource,
+  TakoKnowledgeCardMethodology,
+  TakoCard,
+  TakoWebResult,
+  TakoContentItem,
+  TakoSearchResult,
+  TakoAnswerResult,
+  TakoContentsResult,
+} from "./types";
