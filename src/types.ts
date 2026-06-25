@@ -66,10 +66,17 @@ export interface TakoCardSourceIndexSegment {
   segment_id: string;
 }
 
+export interface TakoCardSourcePrivateIndex {
+  index_type: TakoCardSourceIndex;
+  private_index_id: string;
+  /** Optional for private indexes. */
+  segment_id?: string | null;
+}
+
 export interface TakoKnowledgeCardSource {
   source_name: string | null;
   source_description: string | null;
-  source_index: TakoCardSourceIndex | TakoCardSourceIndexSegment;
+  source_index: TakoCardSourceIndex | TakoCardSourceIndexSegment | TakoCardSourcePrivateIndex;
   url: string | null;
   source_text?: string | null;
 }

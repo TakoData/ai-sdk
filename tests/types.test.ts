@@ -8,6 +8,7 @@ import type {
   TakoContentItem,
   TakoRetrievalConfig,
   TakoContentsConfig,
+  TakoKnowledgeCardSource,
 } from "../src/types";
 
 describe("types", () => {
@@ -25,6 +26,25 @@ describe("types", () => {
     const web: TakoWebResult = { title: "W", url: "https://e.com", citation_number: 1 };
     const res: TakoSearchResult = { cards: [card], web_results: [web], contents_total_cost: 0, request_id: "r" };
     expect(res.cards[0].card_id).toBe("c1");
+  });
+
+  it("models all three source_index shapes", () => {
+    const sources: TakoKnowledgeCardSource[] = [
+      { source_name: "S&P", source_description: null, source_index: "tako", url: null },
+      {
+        source_name: "Segment",
+        source_description: null,
+        source_index: { index_type: "connected_data", segment_id: "123" },
+        url: null,
+      },
+      {
+        source_name: "Private",
+        source_description: null,
+        source_index: { index_type: "connected_data", private_index_id: "pi_1" },
+        url: null,
+      },
+    ];
+    expect(sources).toHaveLength(3);
   });
 
   it("models an answer result", () => {

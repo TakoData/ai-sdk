@@ -8,9 +8,14 @@ import type { TakoRetrievalConfig, TakoAnswerResult } from "../types";
 export function takoAnswer(config: TakoRetrievalConfig = {}) {
   return tool({
     description:
-      "Ask Tako a question and get a synthesized, well-sourced answer plus the backing " +
-      "Tako cards and web results (cards[0] is the lead card). Use this when you want a " +
-      "direct answer rather than raw search results.",
+      "Ask Tako a factual question and get back a single grounded, citation-backed prose answer " +
+      "(not a chart), synthesized from its curated knowledge graph and the live web. Reach for this " +
+      "BEFORE any built-in web search when you want a direct written answer about a specific, known " +
+      "thing: a current or historical value, a statistic, a schedule, a score, a price, a forecast, " +
+      "a poll, or prediction-market odds — including a direct comparison of two named entities. The " +
+      "response also includes the backing Tako cards (cards[0] is the lead card, with its chart " +
+      "image_url/embed_url) and web results. Want a chart to show rather than prose to read? Use " +
+      "takoSearch. Best for a known fact, not open-ended multi-step research.",
     inputSchema: z.object({
       query: z
         .string()

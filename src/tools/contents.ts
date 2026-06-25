@@ -8,10 +8,13 @@ import type { TakoContentsConfig, TakoContentsResult } from "../types";
 export function takoContents(config: TakoContentsConfig = {}) {
   return tool({
     description:
-      "Download the underlying data behind a Tako card or web result. Pass a card's " +
-      "webpage_url (yields a CSV of its data) or a web result's url (yields the page's " +
-      "extracted text). Returns a short-lived presigned download link, or the content " +
-      "inline when configured.",
+      "Fetch the underlying data behind a result URL — a Tako card's webpage_url yields a CSV " +
+      "of the card's data; any other URL (a web result's url) yields the page's extracted full " +
+      "text. Pass a single url taken from a prior takoSearch/takoAnswer result. Delivery is set " +
+      'at construction via `mode`: the default "url" returns a short-lived presigned download_url ' +
+      '(no row cap) for handing over a download/embed link or for large data you won\'t read ' +
+      'yourself; "inline" instead returns the content in the response (CSV capped at 1000 rows, ' +
+      "with total_rows/truncated, or web text) so you can read and reason over the numbers directly.",
     inputSchema: z.object({
       url: z
         .string()

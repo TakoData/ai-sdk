@@ -23,7 +23,7 @@
   "keywords": ["tako", "knowledge-search", "ai-sdk", "vercel", "data-visualization", "ai", "tools"],
   "author": "Tako",
   "license": "MIT",
-  "homepage": "https://tako.com",
+  "homepage": "https://trytako.com",
   "repository": { "type": "git", "url": "git+https://github.com/TakoData/ai-sdk.git" },
   "bugs": { "url": "https://github.com/TakoData/ai-sdk/issues" },
   "packageManager": "pnpm@11.9.0",

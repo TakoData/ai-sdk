@@ -15,6 +15,7 @@ export type {
   TakoKnowledgeCardRelevance,
   TakoResultContent,
   TakoCardSourceIndexSegment,
+  TakoCardSourcePrivateIndex,
   TakoKnowledgeCardSource,
   TakoKnowledgeCardMethodology,
   TakoCard,
