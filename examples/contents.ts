@@ -9,15 +9,29 @@ async function main() {
     { query: "Nvidia full-time employees since 2013" },
     opts,
   )) as any;
-  const firstCardUrl = result.cards?.[0]?.webpage_url;
-  if (!firstCardUrl) {
-    console.log("No card returned.");
-    return;
-  }
+
+  // Candidate URLs to drill into: card data first, then web results. Some Tako
+  // cards come from protected sources whose data can't be exported (the API
+  // returns 403) — so try each until one resolves, the way an agent would.
+  const candidates: string[] = [
+    ...(result.cards ?? []).map((c: any) => c.webpage_url),
+    ...(result.web_results ?? []).map((w: any) => w.url),
+  ].filter(Boolean);
+
   const contents = takoContents({ mode: "inline" });
-  const downloaded = (await contents.execute!({ url: firstCardUrl }, opts)) as any;
-  console.log("Format:", downloaded.contents?.[0]?.format);
-  console.log("Data (first rows):\n", downloaded.contents?.[0]?.data?.slice(0, 500));
+  for (const url of candidates) {
+    try {
+      const downloaded = (await contents.execute!({ url }, opts)) as any;
+      const item = downloaded.contents?.[0];
+      console.log("Source:", url);
+      console.log("Format:", item?.format, "| cost:", item?.cost);
+      console.log("Data (first 500 chars):\n", item?.data?.slice(0, 500));
+      return;
+    } catch (err) {
+      console.log(`Skip ${url}: ${(err as Error).message}`);
+    }
+  }
+  console.log("None of the results exposed downloadable contents.");
 }
 
 main().catch((err) => {
