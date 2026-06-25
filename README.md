@@ -1,6 +1,6 @@
-# Tako AI SDK
+# @takoviz/ai-sdk
 
-Add powerful knowledge search with data visualizations to your AI applications using Tako's knowledge base.
+Tako tools for the [Vercel AI SDK](https://sdk.vercel.ai/) — give your agents access to Tako's knowledge base: charts and well-sourced data (`takoSearch`), synthesized answers (`takoAnswer`), and the underlying data behind any result (`takoContents`).
 
 ## Installation
 
@@ -10,108 +10,112 @@ npm install @takoviz/ai-sdk ai
 
 ## Setup
 
-Get your API key from the [Tako Dashboard](https://trytako.com) and set it as an environment variable:
+Get an API key from the [Tako dashboard](https://trytako.com) and set it as an environment variable:
 
 ```bash
 export TAKO_API_KEY=your_api_key_here
 ```
 
-## Quick Start
+## Tools
+
+| Tool | Endpoint | What it does |
+| --- | --- | --- |
+| `takoSearch()` | `POST /api/v3/search` | Fast retrieval: Tako cards + web results, no synthesis |
+| `takoAnswer()` | `POST /api/v1/answer` | Retrieval **plus** an LLM-synthesized, sourced answer |
+| `takoContents()` | `POST /api/v1/contents` | Download a result's data (card CSV or web page text) |
+
+## Quick start
 
 ```typescript
-import { takoSearch } from '@takoviz/ai-sdk';
-import { generateText } from 'ai';
+import { takoAnswer } from '@takoviz/ai-sdk';
+import { openai } from '@ai-sdk/openai';
+import { generateText, stepCountIs } from 'ai';
 
 const { text } = await generateText({
-  model: 'openai/gpt-4o-mini',
-  prompt: 'What is the stock price of Nvidia?',
-  tools: {
-    takoSearch: takoSearch(),
-  },
-  maxSteps: 5,
+  model: openai('gpt-4o-mini'),
+  prompt: 'Did AMD or Nvidia grow headcount faster over the last decade?',
+  tools: { tako_answer: takoAnswer() },
+  stopWhen: stepCountIs(5),
 });
 
 console.log(text);
 ```
 
-## Configuration Options
-
-You can customize the search behavior by passing a configuration object:
+Give the agent the full toolset so it can search, answer, and drill into data:
 
 ```typescript
-const { text } = await generateText({
-  model: 'openai/gpt-4o-mini',
-  prompt: 'What is the GDP of major economies?',
-  tools: {
-    takoSearch: takoSearch({
-      apiKey: 'your_api_key', // Optional: override environment variable
-      sourceIndexes: ['tako', 'web'], // Default: ['tako', 'web']
-      searchEffort: 'deep', // Options: 'fast', 'deep', 'auto'. Default: 'fast'
-      countryCode: 'US', // Default: 'US'
-      locale: 'en-US', // Default: 'en-US'
-      outputSettings: {
-        knowledgeCardSettings: {
-          imageDarkMode: true, // Default: false
-        },
-      },
-    }),
+import { takoSearch, takoAnswer, takoContents } from '@takoviz/ai-sdk';
+
+const tools = {
+  tako_search: takoSearch(),
+  tako_answer: takoAnswer(),
+  tako_contents: takoContents(),
+};
+```
+
+## Configuration
+
+`takoSearch` and `takoAnswer` take the same config:
+
+```typescript
+takoSearch({
+  apiKey: 'your_api_key',      // optional; defaults to TAKO_API_KEY
+  baseUrl: 'https://trytako.com', // optional; override for staging
+  effort: 'fast',              // 'fast' (default) | 'instant' | 'deep'
+  sources: {                   // a source is searched iff its key is present; omit to search both
+    tako: { count: 5, includeContents: false, deferDataRetrieval: false },
+    web: { count: 5, includeContents: false },
   },
-  maxSteps: 5,
+  countryCode: 'US',           // default 'US'
+  locale: 'en-US',             // default 'en-US'
+  timezone: 'America/New_York',// optional IANA timezone
+  outputSettings: {
+    imageDarkMode: false,
+    forceRefresh: false,       // instant mode only
+  },
 });
 ```
 
-## API Reference
+`takoContents` takes:
 
-### `takoSearch(config?: TakoSearchConfig)`
+```typescript
+takoContents({
+  apiKey: 'your_api_key',
+  baseUrl: 'https://trytako.com',
+  mode: 'url',                 // 'url' (default) → presigned link; 'inline' → content in the response
+});
+```
 
-Creates a Tako knowledge search tool for use with Vercel AI SDK.
+The LLM supplies only the dynamic input: `{ query }` for `takoSearch`/`takoAnswer`, and `{ url }` (a card's `webpage_url` or a web result's `url`) for `takoContents`.
 
-#### Parameters
+## Responses
 
-- `config.apiKey` (optional): Tako API key. Defaults to `TAKO_API_KEY` environment variable.
-- `config.sourceIndexes` (optional): Array of index sources to search. Options: `'tako'`, `'web'`, `'connected_data'`. Default: `['tako', 'web']`.
-- `config.searchEffort` (optional): Search depth. Options: `'fast'`, `'deep'`, `'auto'`. Default: `'fast'`.
-- `config.countryCode` (optional): ISO3166-1 alpha-2 country code. Default: `'US'`.
-- `config.locale` (optional): Language/region identifier. Default: `'en-US'`.
-- `config.outputSettings` (optional): Output customization options.
-
-#### Returns
-
-A Vercel AI SDK tool that accepts a natural language query and returns Tako knowledge cards with visualizations, data, and sources.
-
-## Response Format
-
-The tool returns a `TakoSearchResponse` object:
+`takoSearch` resolves to:
 
 ```typescript
 {
-  outputs: {
-    knowledge_cards: [
-      {
-        card_id: string;
-        title: string;
-        description: string;
-        webpage_url: string;
-        image_url: string;
-        sources: Array<{ source_name: string; url: string }>;
-        visualization_data: {
-          data: any[];
-          viz_config: Record<string, any>;
-        };
-      }
-    ];
-    answer: string;
-  };
+  cards: TakoCard[];          // Tako knowledge cards (title, description, image_url, webpage_url, sources, ...)
+  web_results: TakoWebResult[];
+  contents_total_cost: number;
   request_id: string;
 }
 ```
 
+`takoAnswer` additionally includes `answer: string` (with `cards[0]` as the lead card). `takoContents` resolves to `{ contents: TakoContentItem[]; request_id: string }`, where each item has a `format` (`'csv'` | `'text'`), a `cost`, and either a presigned `url`/`expires_at` (url mode) or inline `data`/`total_rows`/`truncated` (inline mode).
+
+Full type definitions ship with the package.
+
 ## TypeScript
 
-This package includes full TypeScript type definitions. Import types as needed:
-
 ```typescript
-import type { TakoSearchConfig, TakoSearchResponse, TakoKnowledgeCard } from '@takodata/ai-sdk';
+import type {
+  TakoRetrievalConfig,
+  TakoContentsConfig,
+  TakoSearchResult,
+  TakoAnswerResult,
+  TakoContentsResult,
+  TakoCard,
+} from '@takoviz/ai-sdk';
 ```
 
 ## License
@@ -120,6 +124,6 @@ MIT
 
 ## Links
 
-- [Tako Documentation](https://docs.tako.com)
-- [Vercel AI SDK Documentation](https://sdk.vercel.ai/docs)
-- [GitHub Repository](https://github.com/TakoData/ai-sdk)
+- [Tako documentation](https://docs.trytako.com)
+- [Vercel AI SDK](https://sdk.vercel.ai/docs)
+- [GitHub repository](https://github.com/TakoData/ai-sdk)
