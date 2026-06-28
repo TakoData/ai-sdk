@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/TakoData/ai-sdk/compare/ai-sdk-v2.0.1...ai-sdk-v2.1.0) (2026-06-28)
+
+
+### Features
+
+* rename "tako" source key to "data" (keep "tako" as deprecated alias) ([f2c3e2b](https://github.com/TakoData/ai-sdk/commit/f2c3e2b134ac1ef0c40173012b8095555655ebfd))
+* rename "tako" source key to "data" (keep "tako" as deprecated alias) ([1b138b1](https://github.com/TakoData/ai-sdk/commit/1b138b192686e093daf0df17a31b33fbb5945c6e))
+
 ## [2.0.1](https://github.com/TakoData/ai-sdk/compare/ai-sdk-v2.0.0...ai-sdk-v2.0.1) (2026-06-25)
 
 
