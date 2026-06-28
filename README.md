@@ -63,7 +63,7 @@ takoSearch({
   baseUrl: 'https://tako.com', // optional; override for staging
   effort: 'fast',              // 'fast' (default) | 'instant' | 'deep'
   sources: {                   // a source is searched iff its key is present; omit to search both
-    tako: { count: 5, includeContents: false, deferDataRetrieval: false },
+    data: { count: 5, includeContents: false, deferDataRetrieval: false }, // legacy alias: tako
     web: { count: 5, includeContents: false },
   },
   countryCode: 'US',           // default 'US'

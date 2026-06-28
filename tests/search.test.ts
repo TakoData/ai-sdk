@@ -28,7 +28,7 @@ describe("takoSearch", () => {
     const t = takoSearch({
       apiKey: "key",
       effort: "deep",
-      sources: { tako: { count: 10, deferDataRetrieval: true } },
+      sources: { data: { count: 10, deferDataRetrieval: true } },
       timezone: "America/New_York",
       outputSettings: { imageDarkMode: true },
     });
@@ -39,10 +39,22 @@ describe("takoSearch", () => {
       effort: "deep",
       country_code: "US",
       locale: "en-US",
-      sources: { tako: { count: 10, defer_data_retrieval: true } },
+      sources: { data: { count: 10, defer_data_retrieval: true } },
       timezone: "America/New_York",
       output_settings: { image_dark_mode: true },
     });
+  });
+
+  it("maps the deprecated `tako` source alias onto the `data` wire key", async () => {
+    const fetchMock = stubFetch(200, OK);
+    const t = takoSearch({
+      apiKey: "key",
+      sources: { tako: { count: 10, deferDataRetrieval: true } },
+    });
+    await runTool(t, { query: "x" });
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const body = JSON.parse(init.body as string);
+    expect(body.sources).toEqual({ data: { count: 10, defer_data_retrieval: true } });
   });
 
   it("honors baseUrl override (trailing slash stripped)", async () => {
