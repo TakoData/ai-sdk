@@ -16,7 +16,7 @@ export interface SearchRequestBody {
   country_code: string;
   locale: string;
   sources?: {
-    tako?: { count?: number; include_contents?: boolean; defer_data_retrieval?: boolean };
+    data?: { count?: number; include_contents?: boolean; defer_data_retrieval?: boolean };
     web?: { count?: number; include_contents?: boolean };
   };
   timezone?: string;
@@ -34,12 +34,14 @@ export function buildSearchRequestBody(config: TakoRetrievalConfig, query: strin
 
   if (config.sources) {
     const sources: NonNullable<SearchRequestBody["sources"]> = {};
-    if (config.sources.tako) {
-      const tako: NonNullable<NonNullable<SearchRequestBody["sources"]>["tako"]> = {};
-      if (config.sources.tako.count !== undefined) tako.count = config.sources.tako.count;
-      if (config.sources.tako.includeContents !== undefined) tako.include_contents = config.sources.tako.includeContents;
-      if (config.sources.tako.deferDataRetrieval !== undefined) tako.defer_data_retrieval = config.sources.tako.deferDataRetrieval;
-      sources.tako = tako;
+    // `data` is the curated Tako source; `tako` is the deprecated legacy alias.
+    const dataSource = config.sources.data ?? config.sources.tako;
+    if (dataSource) {
+      const data: NonNullable<NonNullable<SearchRequestBody["sources"]>["data"]> = {};
+      if (dataSource.count !== undefined) data.count = dataSource.count;
+      if (dataSource.includeContents !== undefined) data.include_contents = dataSource.includeContents;
+      if (dataSource.deferDataRetrieval !== undefined) data.defer_data_retrieval = dataSource.deferDataRetrieval;
+      sources.data = data;
     }
     if (config.sources.web) {
       const web: NonNullable<NonNullable<SearchRequestBody["sources"]>["web"]> = {};

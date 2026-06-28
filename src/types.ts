@@ -31,8 +31,14 @@ export interface TakoCardSourceOptions extends TakoSourceOptions {
 export interface TakoRetrievalConfig extends TakoBaseConfig {
   /** "fast" (default) | "instant" | "deep". */
   effort?: TakoSearchEffort;
-  /** Per-source settings. A source is searched iff its key is present. Omit to search tako + web. */
-  sources?: { tako?: TakoCardSourceOptions; web?: TakoSourceOptions };
+  /** Per-source settings. A source is searched iff its key is present. Omit to search data + web. */
+  sources?: {
+    /** The curated Tako data source. */
+    data?: TakoCardSourceOptions;
+    web?: TakoSourceOptions;
+    /** @deprecated Use `data`. Legacy alias for the curated Tako source. */
+    tako?: TakoCardSourceOptions;
+  };
   /** ISO 3166-1 alpha-2 country code. Default "US". */
   countryCode?: string;
   /** BCP-47 locale tag. Default "en-US". */

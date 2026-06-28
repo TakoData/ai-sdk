@@ -71,7 +71,7 @@ describe("types", () => {
       apiKey: "k",
       baseUrl: "https://staging.trytako.com",
       effort: "deep",
-      sources: { tako: { count: 10, deferDataRetrieval: true }, web: { count: 3, includeContents: true } },
+      sources: { data: { count: 10, deferDataRetrieval: true }, web: { count: 3, includeContents: true } },
       countryCode: "US",
       locale: "en-US",
       timezone: "America/New_York",
