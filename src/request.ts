@@ -84,9 +84,10 @@ export function buildContentsRequestBody(url: string, mode: TakoContentsMode): C
 
 // ----- Response normalizers -----
 //
-// The API guarantees only `request_id` (plus `answer` on the answer surface) and
-// omits collections rather than sending them empty. Tools normalize before
-// returning so callers can read `result.cards.length` without a guard.
+// The API guarantees only `request_id` (plus `answer` on the answer surface); the
+// contract permits omitting the collections, though it currently sends them
+// empty. Normalizing either shape lets callers read `result.cards.length`
+// without a guard.
 
 export function normalizeSearchResult(response: TakoSearchResponse): TakoSearchResult {
   return {

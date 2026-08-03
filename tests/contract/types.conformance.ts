@@ -27,20 +27,45 @@ import type {
   TakoDataset as OfficialTakoDataset,
   WebResult as OfficialWebResult,
   TakoSourceIndex as OfficialTakoSourceIndex,
+  // Nested mirrored types — gated for key symmetry below.
+  ColumnDescriptor as OfficialColumnDescriptor,
+  DataFreshness as OfficialDataFreshness,
+  ExportPricing as OfficialExportPricing,
+  KnowledgeCardMethodology as OfficialKnowledgeCardMethodology,
+  MetricDefinition as OfficialMetricDefinition,
+  TakoCardNode as OfficialTakoCardNode,
+  TakoCardSource as OfficialTakoCardSource,
+  TakoDatasetColumn as OfficialTakoDatasetColumn,
+  TakoDatasetSource as OfficialTakoDatasetSource,
+  Usage as OfficialUsage,
+  UsageCompute as OfficialUsageCompute,
+  UsageData as OfficialUsageData,
 } from "tako-sdk";
 import type {
   TakoAnswerResponse,
   TakoAnswerResult,
   TakoCard,
+  TakoCardNode,
+  TakoCardSource,
+  TakoColumnDescriptor,
   TakoContentFormat,
   TakoContentItem,
   TakoContentsResponse,
   TakoContentsResult,
+  TakoDataFreshness,
   TakoDataset,
+  TakoDatasetColumn,
+  TakoDatasetSource,
+  TakoExportPricing,
+  TakoKnowledgeCardMethodology,
+  TakoMetricDefinition,
   TakoResultContent,
   TakoSearchResponse,
   TakoSearchResult,
   TakoSourceIndex,
+  TakoUsage,
+  TakoUsageCompute,
+  TakoUsageData,
   TakoWebResult,
 } from "../../src/types";
 
@@ -122,6 +147,39 @@ export const datasetKeys: true = true as SameKeys<TakoDataset, OfficialTakoDatas
 export const searchKeys: true = true as SameKeys<TakoSearchResponse, OfficialSearchResponse>;
 export const answerKeys: true = true as SameKeys<TakoAnswerResponse, OfficialAnswerResponse>;
 export const contentsKeys: true = true as SameKeys<TakoContentsResponse, OfficialContentsResponse>;
+
+// Nested types need the same gate. Checking only the eight above leaves both
+// drift classes live one level down: deleting `last_updated` from
+// TakoDataFreshness compiled clean, because `keyof TakoCard` never changes and
+// the narrowed nested type stays assignable. That is the P0-6 regression sitting
+// directly under the field the check was written to protect.
+export const dataFreshnessKeys: true = true as SameKeys<TakoDataFreshness, OfficialDataFreshness>;
+export const cardSourceKeys: true = true as SameKeys<TakoCardSource, OfficialTakoCardSource>;
+export const cardNodeKeys: true = true as SameKeys<TakoCardNode, OfficialTakoCardNode>;
+export const metricDefinitionKeys: true = true as SameKeys<
+  TakoMetricDefinition,
+  OfficialMetricDefinition
+>;
+export const methodologyKeys: true = true as SameKeys<
+  TakoKnowledgeCardMethodology,
+  OfficialKnowledgeCardMethodology
+>;
+export const usageKeys: true = true as SameKeys<TakoUsage, OfficialUsage>;
+export const usageComputeKeys: true = true as SameKeys<TakoUsageCompute, OfficialUsageCompute>;
+export const usageDataKeys: true = true as SameKeys<TakoUsageData, OfficialUsageData>;
+export const exportPricingKeys: true = true as SameKeys<TakoExportPricing, OfficialExportPricing>;
+export const columnDescriptorKeys: true = true as SameKeys<
+  TakoColumnDescriptor,
+  OfficialColumnDescriptor
+>;
+export const datasetColumnKeys: true = true as SameKeys<
+  TakoDatasetColumn,
+  OfficialTakoDatasetColumn
+>;
+export const datasetSourceKeys: true = true as SameKeys<
+  TakoDatasetSource,
+  OfficialTakoDatasetSource
+>;
 
 // --- Result types: the normalized shapes the tools return ---
 //

@@ -111,7 +111,7 @@ describe("types", () => {
   it("accepts retrieval + contents config", () => {
     const r: TakoRetrievalConfig = {
       apiKey: "k",
-      baseUrl: "https://staging.tako.com",
+      baseUrl: "https://e.com",
       effort: "deep",
       sources: { data: { count: 10, includeContents: true }, web: { count: 3, includeContents: true } },
       countryCode: "US",

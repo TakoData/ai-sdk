@@ -282,9 +282,9 @@ export interface TakoWebResult {
 // ----- Wire responses (exactly what the API sends) -----
 
 /**
- * The raw `POST /api/v3/search` body. Only `request_id` is guaranteed; the
- * collections are absent rather than empty when there is nothing to report.
- * Tools return the normalized {@link TakoSearchResult} instead.
+ * The raw `POST /api/v3/search` body. Only `request_id` is guaranteed — the
+ * contract permits omitting the collections, though the API currently sends them
+ * empty. Tools normalize either shape and return {@link TakoSearchResult}.
  */
 export interface TakoSearchResponse {
   cards?: TakoCard[];
