@@ -3,3 +3,7 @@ dist
 .env
 *.log
 .DS_Store
+
+# Local codebase-analysis output. Not part of the package; keep it out of the
+# public repo so a stray `git add -A` can't publish it.
+.understand-anything/
