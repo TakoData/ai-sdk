@@ -13,8 +13,8 @@ const schemas: Record<string, any> = spec.components.schemas;
  * Response-side contract, checked against two independent oracles:
  *
  *   1. Tako's vendored OpenAPI document (./openapi.yaml).
- *   2. `tako-sdk`, Tako's official TypeScript client, generated from that
- *      same document and released from the Tako monorepo.
+ *   2. `tako-sdk`, Tako's official TypeScript client, generated from that same
+ *      document.
  *
  * When both agree that a field is absent, this SDK's type declaring it is drift.
  * The `tako-sdk` decoders are the sharper oracle: they materialise exactly the

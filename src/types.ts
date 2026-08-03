@@ -13,7 +13,11 @@ export type TakoContentFormat = "csv" | "json_records" | "json_compact";
 /** Public source taxonomy for the card surfaces. */
 export type TakoSourceIndex = "data" | "web";
 
-/** @deprecated Renamed to {@link TakoSourceIndex}. */
+/**
+ * @deprecated Renamed to {@link TakoSourceIndex}, and the value set collapsed:
+ * 2.x had `"tako" | "web" | "connected_data" | "tako_deep_v2"`, this resolves to
+ * `"data" | "web"`. Comparisons against the removed values no longer compile.
+ */
 export type TakoCardSourceIndex = TakoSourceIndex;
 
 export type TakoKnowledgeCardRelevance = "High" | "Medium" | "Low";

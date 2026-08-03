@@ -25,10 +25,21 @@ async function compileConformance(): Promise<string> {
     await execFileAsync("pnpm", ["exec", "tsc", "-p", "tsconfig.conformance.json"], {
       cwd: REPO_ROOT,
     });
-    return "";
+    return ""; // exit 0 — tsc ran and found nothing
   } catch (err) {
-    // tsc exits non-zero when it reports diagnostics; they land on stdout.
-    return (err as { stdout?: string }).stdout ?? "";
+    const e = err as { code?: unknown; stdout?: string; stderr?: string };
+
+    // tsc reports diagnostics on stdout and exits non-zero. Anything else means
+    // the check never ran — a spawn failure, or pnpm/node refusing to start.
+    // Returning "" there would make "could not check" indistinguishable from
+    // "no drift", so this test would pass while proving nothing.
+    if (typeof e.code === "number" && e.stdout && e.stdout.trim() !== "") {
+      return e.stdout;
+    }
+    throw new Error(
+      `The conformance compile did not run, so drift is unverified. ` +
+        `exit=${String(e.code)}\nstdout: ${e.stdout ?? "(empty)"}\nstderr: ${e.stderr ?? "(empty)"}`,
+    );
   }
 }
 

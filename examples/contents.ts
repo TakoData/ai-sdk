@@ -50,7 +50,8 @@ async function main() {
         console.log(`Rows: ${item.total_rows}${item.truncated ? " (truncated)" : ""}`);
       }
       console.log("Data (first 500 chars):\n", item.data?.slice(0, 500));
-      console.log("Request cost (USD):", downloaded.usage?.total_cost_usd ?? 0);
+      // Per-item cost is what the API populates; the aggregate `usage` is not.
+      console.log("Item cost (USD):", item.cost ?? 0);
       return;
     } catch (err) {
       // `exportable: true` is eligibility, not a guarantee — still fall back.

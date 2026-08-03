@@ -2,9 +2,9 @@
 
 ## 2.x → 3.0
 
-Tako's API moved on between June and August 2026 and this SDK's types did not follow. 3.0 realigns them. Every change below is a case where 2.x described something the API no longer does — so if code depended on it, it was already broken at runtime, whatever TypeScript said.
+3.0 realigns this SDK's types with the current Tako API. Every change below is a case where 2.x described something the API no longer does — so if code depended on it, it was already broken at runtime, whatever TypeScript said.
 
-`tests/contract/` now validates these types against Tako's published OpenAPI document and against [`tako-sdk`](https://www.npmjs.com/package/tako-sdk), Tako's official generated client, so this class of drift fails CI from now on.
+`tests/contract/` validates these types against Tako's published OpenAPI document and against [`tako-sdk`](https://www.npmjs.com/package/tako-sdk), Tako's official generated client, so a type that stops matching either one fails CI. Both are pinned snapshots, refreshed deliberately rather than continuously.
 
 ### Config
 
@@ -18,7 +18,7 @@ The API removed `defer_data_retrieval` from its data-source settings, and those 
 
 | 2.x | 3.0 |
 | --- | --- |
-| `result.contents_total_cost: number` | `result.usage?.total_cost_usd` |
+| `result.contents_total_cost: number` | **No replacement.** Read per-item `content.cost` / `content.export_pricing` (see below) |
 | `content.format` | `content.content_format` |
 | `TakoContentFormat = 'csv' \| 'text'` | `'csv' \| 'json_records' \| 'json_compact'` |
 
@@ -40,7 +40,7 @@ for (const card of result.cards) {
 
 Verified 2026-08 across plain, `deep` and `includeContents` search, answer, and both contents modes: `usage` was absent from every response. It is typed `usage?: TakoUsage | null` so it will light up if Tako starts emitting it, but do not build cost tracking on it yet. Sum the per-item `cost` fields instead.
 
-**Content format.** The field was renamed *and* its values changed. `'text'` is gone: web page text is now signalled by `content_format === null`.
+**Content format.** The field was renamed *and* its values changed. `'text'` is gone: web page text is signalled by the absence of a format. The field is optional as well as nullable, so it may arrive as `null` **or** be missing entirely — test it loosely with `== null`, never `=== null`.
 
 ```ts
 // 2.x
@@ -48,7 +48,7 @@ if (item.format === 'csv') parseCsv(item.data);
 else if (item.format === 'text') readProse(item.data);   // both branches dead
 
 // 3.0
-if (item.content_format === null) readProse(item.data);  // web page text
+if (item.content_format == null) readProse(item.data);   // web page text
 else parseCsv(item.data);                                // card data
 ```
 
@@ -70,7 +70,7 @@ if (src.source_index === 'tako')   // never matches — compiles fine, never run
 if (src.source_index === 'data')   // correct
 ```
 
-`source_index` is also a plain string now. 2.x modelled it as a union that could be an object (`{ index_type, segment_id }`), which the API has never sent on this surface — any code narrowing on that shape can be deleted.
+`source_index` is now the required two-member union `'data' | 'web'`. 2.x modelled it as a union that could also be an object (`{ index_type, segment_id }`), which the API has never sent on this surface — any code narrowing on that shape can be deleted.
 
 ### Guaranteed collections
 

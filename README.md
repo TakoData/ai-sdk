@@ -105,7 +105,7 @@ The LLM supplies only the dynamic input: `{ query }` for `takoSearch`/`takoAnswe
 
 `takoAnswer` additionally includes `answer: string` (with `cards[0]` as the lead card). `takoContents` resolves to `{ contents: TakoContentItem[]; request_id: string; usage? }`.
 
-The API guarantees only `request_id` and omits empty collections, so the tools normalize: `cards`, `web_results` and `contents` are **always arrays**. No `?.` needed.
+The API guarantees only `request_id` — the contract permits omitting the collections — so the tools normalize: `cards`, `web_results` and `contents` are **always arrays**. No `?.` needed.
 
 ### Reading a card
 
@@ -151,7 +151,7 @@ import type {
 } from '@takoviz/ai-sdk';
 ```
 
-The types mirror Tako's published OpenAPI document. `tests/contract/` validates them against a vendored copy of that spec and against [`tako-sdk`](https://www.npmjs.com/package/tako-sdk), Tako's official generated client, so API drift fails CI rather than shipping.
+The types mirror Tako's published OpenAPI document. `tests/contract/` validates them against a vendored copy of that spec and against [`tako-sdk`](https://www.npmjs.com/package/tako-sdk), Tako's official generated client, so a type that stops matching the API fails CI. Both references are pinned snapshots, refreshed by `pnpm spec:refresh` and a `tako-sdk` bump.
 
 If you need the raw wire shapes (where collections are optional, before the tools normalize them), import `TakoSearchResponse`, `TakoAnswerResponse` or `TakoContentsResponse`.
 

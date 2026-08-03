@@ -85,9 +85,9 @@ describe("takoSearch", () => {
 
   it("honors baseUrl override (trailing slash stripped)", async () => {
     const fetchMock = stubFetch(200, OK);
-    const t = takoSearch({ apiKey: "key", baseUrl: "https://staging.trytako.com/" });
+    const t = takoSearch({ apiKey: "key", baseUrl: "https://staging.tako.com/" });
     await runTool(t, { query: "x" });
-    expect(fetchMock.mock.calls[0][0]).toBe("https://staging.trytako.com/api/v3/search");
+    expect(fetchMock.mock.calls[0][0]).toBe("https://staging.tako.com/api/v3/search");
   });
 
   it("falls back to TAKO_API_KEY env and throws clearly when unset", async () => {

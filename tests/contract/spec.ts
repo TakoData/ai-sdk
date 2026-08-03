@@ -6,11 +6,11 @@ import YAML from "yaml";
 
 /**
  * Tako's published OpenAPI document, vendored verbatim from
- * https://docs.tako.com/api-reference/openapi.yaml
+ * https://docs.tako.com/api-reference/openapi.yaml — the authoritative
+ * description of the live API.
  *
- * It is generated from the Tako monorepo and is the authoritative description of
- * the live API. Tests validate against it so that API drift fails CI instead of
- * silently shipping. Refresh with `pnpm spec:refresh`.
+ * Tests validate against it so a mismatch fails CI instead of shipping. The copy
+ * is a pinned snapshot; refresh it with `pnpm spec:refresh`.
  */
 const SPEC_PATH = fileURLToPath(new URL("./openapi.yaml", import.meta.url));
 
@@ -26,8 +26,10 @@ ajv.addSchema(spec, "openapi");
 /**
  * Compile a validator for one `#/components/schemas/<name>` entry.
  *
- * Request schemas declare `additionalProperties: false`, which mirrors the
- * server's Pydantic `extra="forbid"`: a field the model rejects fails here too.
+ * Where a request schema declares `additionalProperties: false`, the API rejects
+ * unknown properties with a 400 rather than ignoring them — so a body that fails
+ * here fails against the live API too. Note that `ContentsRequest` does *not*
+ * declare it, so unknown properties pass validation on that schema.
  */
 export function validator(schemaName: string) {
   const validate = ajv.getSchema(`openapi#/components/schemas/${schemaName}`);

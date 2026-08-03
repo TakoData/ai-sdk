@@ -1,6 +1,7 @@
 import type {
   TakoAnswerResponse,
   TakoAnswerResult,
+  TakoContentsMode,
   TakoContentsResponse,
   TakoContentsResult,
   TakoRetrievalConfig,
@@ -69,6 +70,16 @@ export function buildSearchRequestBody(config: TakoRetrievalConfig, query: strin
   }
 
   return body;
+}
+
+export interface ContentsRequestBody {
+  url: string;
+  mode: TakoContentsMode;
+}
+
+/** Map a url + delivery mode to the POST body the contents endpoint expects. */
+export function buildContentsRequestBody(url: string, mode: TakoContentsMode): ContentsRequestBody {
+  return { url, mode };
 }
 
 // ----- Response normalizers -----

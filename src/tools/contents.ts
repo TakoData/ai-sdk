@@ -1,7 +1,12 @@
 import { tool, type Tool } from "ai";
 import { z } from "zod";
 import { callTako } from "../client";
-import { normalizeContentsResult, resolveApiKey, resolveBaseUrl } from "../request";
+import {
+  buildContentsRequestBody,
+  normalizeContentsResult,
+  resolveApiKey,
+  resolveBaseUrl,
+} from "../request";
 import type { TakoContentsConfig, TakoContentsResponse, TakoContentsResult } from "../types";
 
 /**
@@ -49,7 +54,7 @@ export function takoContents(
           baseUrl: resolveBaseUrl(config),
           path: "/api/v1/contents",
           apiKey: resolveApiKey(config),
-          body: { url, mode },
+          body: buildContentsRequestBody(url, mode),
           operation: "fetch contents",
         }),
       ),

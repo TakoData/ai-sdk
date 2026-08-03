@@ -36,9 +36,12 @@ import type {
   TakoContentItem,
   TakoContentsResponse,
   TakoContentsResult,
+  TakoDataset,
+  TakoResultContent,
   TakoSearchResponse,
   TakoSearchResult,
   TakoSourceIndex,
+  TakoWebResult,
 } from "../../src/types";
 
 /**
@@ -92,6 +95,33 @@ export const format: TakoContentFormat = officialFormat;
 export const formatBack: OfficialContentsFormat = null as unknown as TakoContentFormat;
 export const sourceIndex: TakoSourceIndex = officialSourceIndex;
 export const sourceIndexBack: OfficialTakoSourceIndex = null as unknown as TakoSourceIndex;
+
+// --- Key symmetry ---
+//
+// The assignments above prove our types are not over-strict, but they cannot
+// catch drift by a whole key in either direction: an optional key we declare and
+// the API does not send is still assignable, and a key the API sends that we
+// omit is simply ignored (no excess-property check applies to a `declare const`).
+// Deleting `data_freshness` from TakoCard passed every assignment above.
+//
+// This compares key sets directly, so both classes fail the compile and the
+// error names the offending key. Compared against the unpatched official types:
+// only value types were ever patched, never key sets.
+type KeyDiff<Ours, Official> =
+  | Exclude<keyof Official, keyof Ours>
+  | Exclude<keyof Ours, keyof Official>;
+type SameKeys<Ours, Official> = [KeyDiff<Ours, Official>] extends [never]
+  ? true
+  : { KEY_DRIFT: KeyDiff<Ours, Official> };
+
+export const cardKeys: true = true as SameKeys<TakoCard, OfficialTakoCard>;
+export const webResultKeys: true = true as SameKeys<TakoWebResult, OfficialWebResult>;
+export const resultContentKeys: true = true as SameKeys<TakoResultContent, OfficialResultContent>;
+export const contentItemKeys: true = true as SameKeys<TakoContentItem, OfficialContentItem>;
+export const datasetKeys: true = true as SameKeys<TakoDataset, OfficialTakoDataset>;
+export const searchKeys: true = true as SameKeys<TakoSearchResponse, OfficialSearchResponse>;
+export const answerKeys: true = true as SameKeys<TakoAnswerResponse, OfficialAnswerResponse>;
+export const contentsKeys: true = true as SameKeys<TakoContentsResponse, OfficialContentsResponse>;
 
 // --- Result types: the normalized shapes the tools return ---
 //

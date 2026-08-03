@@ -21,4 +21,14 @@ describe("takoAnswer", () => {
     });
     expect((res as any).answer).toBe("AMD grew faster.");
   });
+
+  it("normalizes absent collections to empty arrays", async () => {
+    // The contract guarantees only `answer` and `request_id` here, so a bare
+    // response is valid. Callers still get arrays they can read without a guard.
+    stubFetch(200, JSON.stringify({ answer: "x", request_id: "r" }));
+    const res = (await runTool(takoAnswer({ apiKey: "key" }), { query: "q" })) as any;
+    expect(res.cards).toEqual([]);
+    expect(res.web_results).toEqual([]);
+    expect(res.answer).toBe("x");
+  });
 });
