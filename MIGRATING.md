@@ -22,17 +22,23 @@ The API removed `defer_data_retrieval` from its data-source settings, and those 
 | `content.format` | `content.content_format` |
 | `TakoContentFormat = 'csv' \| 'text'` | `'csv' \| 'json_records' \| 'json_compact'` |
 
-**Cost.** `contents_total_cost` no longer exists. `usage` replaces it and adds a breakdown:
+**Cost.** `contents_total_cost` no longer exists — confirmed absent from every live response. The spec defines `usage` as its successor, but **the API does not currently populate `usage` either**, so there is no drop-in replacement for an aggregate request cost:
 
 ```ts
 // 2.x
 const cost = result.contents_total_cost;          // undefined at runtime
 
-// 3.0
-const cost = result.usage?.total_cost_usd ?? 0;
-const compute = result.usage?.compute?.cost_usd;  // running the operation
-const data = result.usage?.data?.cost_usd;        // inline data delivered
+// 3.0 — typed, but currently always undefined in practice
+const cost = result.usage?.total_cost_usd;
+
+// 3.0 — where pricing actually lives today: per item
+for (const card of result.cards) {
+  card.content?.cost;            // USD, e.g. 0.001
+  card.content?.export_pricing;  // rate card for a full /contents export
+}
 ```
+
+Verified 2026-08 across plain, `deep` and `includeContents` search, answer, and both contents modes: `usage` was absent from every response. It is typed `usage?: TakoUsage | null` so it will light up if Tako starts emitting it, but do not build cost tracking on it yet. Sum the per-item `cost` fields instead.
 
 **Content format.** The field was renamed *and* its values changed. `'text'` is gone: web page text is now signalled by `content_format === null`.
 
@@ -68,7 +74,7 @@ if (src.source_index === 'data')   // correct
 
 ### Guaranteed collections
 
-The API guarantees only `request_id` (plus `answer` on the answer surface) and omits empty collections rather than sending `[]`. 2.x typed `cards`, `web_results` and `contents` as always-present, so `result.cards.length` could throw on a perfectly valid response.
+The API guarantees only `request_id` (plus `answer` on the answer surface); the collections are not in its `required` list, so a valid response may omit them. In practice the API currently does send `cards: []` on a web-only search, so 2.x's always-present typing was a latent hazard rather than an active crash — but the contract permits omission, and `tako-sdk` decodes an absent collection to `undefined`.
 
 3.0 keeps them non-optional **and makes it true**: the tools normalize absent collections to `[]` before returning. No caller changes needed, and no `?.` required.
 

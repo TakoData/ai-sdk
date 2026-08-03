@@ -90,6 +90,12 @@ export interface TakoUsageData {
 /**
  * Usage for one metered request. `total_cost_usd` always equals the sum of
  * whichever breakdown components are present.
+ *
+ * The spec defines this as the successor to the removed `contents_total_cost`,
+ * but as of 2026-08 the API does not populate it on search, answer or contents
+ * (verified live across plain, deep and include_contents calls). Treat it as
+ * genuinely optional. For per-item pricing today, read `TakoResultContent.cost`
+ * and `TakoResultContent.export_pricing`, which are populated.
  */
 export interface TakoUsage {
   /** Total quoted USD cost of this request. */

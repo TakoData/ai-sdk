@@ -97,9 +97,11 @@ The LLM supplies only the dynamic input: `{ query }` for `takoSearch`/`takoAnswe
   cards: TakoCard[];          // Tako knowledge cards (title, description, image_url, webpage_url, sources, ...)
   web_results: TakoWebResult[];
   request_id: string;
-  usage?: TakoUsage | null;   // { total_cost_usd, compute?, data? }
+  usage?: TakoUsage | null;   // { total_cost_usd, compute?, data? } — see note
 }
 ```
+
+> **Cost reporting.** `usage` is what the API spec defines for per-request cost, but as of 2026-08 it is not populated on any endpoint. For pricing today, read the per-item `content.cost` and `content.export_pricing` on each card, which are populated.
 
 `takoAnswer` additionally includes `answer: string` (with `cards[0]` as the lead card). `takoContents` resolves to `{ contents: TakoContentItem[]; request_id: string; usage? }`.
 
