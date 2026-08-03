@@ -12,7 +12,7 @@ describe("index barrel", () => {
   });
 
   it("the exported takoSearch produces a working tool", async () => {
-    stubFetch(200, JSON.stringify({ cards: [], web_results: [], contents_total_cost: 0, request_id: "r" }));
+    stubFetch(200, JSON.stringify({ cards: [], web_results: [], request_id: "r" }));
     const res = await runTool(takoSearch({ apiKey: "key" }), { query: "x" });
     expect((res as any).request_id).toBe("r");
   });

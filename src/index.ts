@@ -3,24 +3,48 @@ export { takoAnswer } from "./tools/answer";
 export { takoContents } from "./tools/contents";
 
 export type {
+  // Config
   TakoBaseConfig,
   TakoRetrievalConfig,
   TakoContentsConfig,
   TakoSourceOptions,
   TakoCardSourceOptions,
+  // Enums / unions
   TakoSearchEffort,
   TakoContentsMode,
   TakoContentFormat,
+  TakoSourceIndex,
   TakoCardSourceIndex,
   TakoKnowledgeCardRelevance,
+  TakoGraphNodeType,
+  TakoDatasetColumnType,
+  // Usage
+  TakoUsage,
+  TakoUsageCompute,
+  TakoUsageData,
+  // Content payloads
   TakoResultContent,
-  TakoCardSourceIndexSegment,
-  TakoCardSourcePrivateIndex,
+  TakoContentItem,
+  TakoDataset,
+  TakoDatasetCell,
+  TakoDatasetColumn,
+  TakoDatasetSource,
+  TakoExportPricing,
+  TakoColumnDescriptor,
+  // Cards and web results
+  TakoCard,
+  TakoCardSource,
   TakoKnowledgeCardSource,
   TakoKnowledgeCardMethodology,
-  TakoCard,
+  TakoCardNode,
+  TakoMetricDefinition,
+  TakoDataFreshness,
   TakoWebResult,
-  TakoContentItem,
+  // Wire responses (what the API sends; only request_id is guaranteed)
+  TakoSearchResponse,
+  TakoAnswerResponse,
+  TakoContentsResponse,
+  // Tool results (normalized: collections always present)
   TakoSearchResult,
   TakoAnswerResult,
   TakoContentsResult,

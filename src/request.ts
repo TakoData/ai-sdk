@@ -1,4 +1,12 @@
-import type { TakoRetrievalConfig } from "./types";
+import type {
+  TakoAnswerResponse,
+  TakoAnswerResult,
+  TakoContentsResponse,
+  TakoContentsResult,
+  TakoRetrievalConfig,
+  TakoSearchResponse,
+  TakoSearchResult,
+} from "./types";
 
 const DEFAULT_BASE_URL = "https://tako.com";
 
@@ -16,7 +24,7 @@ export interface SearchRequestBody {
   country_code: string;
   locale: string;
   sources?: {
-    data?: { count?: number; include_contents?: boolean; defer_data_retrieval?: boolean };
+    data?: { count?: number; include_contents?: boolean };
     web?: { count?: number; include_contents?: boolean };
   };
   timezone?: string;
@@ -40,7 +48,6 @@ export function buildSearchRequestBody(config: TakoRetrievalConfig, query: strin
       const data: NonNullable<NonNullable<SearchRequestBody["sources"]>["data"]> = {};
       if (dataSource.count !== undefined) data.count = dataSource.count;
       if (dataSource.includeContents !== undefined) data.include_contents = dataSource.includeContents;
-      if (dataSource.deferDataRetrieval !== undefined) data.defer_data_retrieval = dataSource.deferDataRetrieval;
       sources.data = data;
     }
     if (config.sources.web) {
@@ -62,4 +69,30 @@ export function buildSearchRequestBody(config: TakoRetrievalConfig, query: strin
   }
 
   return body;
+}
+
+// ----- Response normalizers -----
+//
+// The API guarantees only `request_id` (plus `answer` on the answer surface) and
+// omits collections rather than sending them empty. Tools normalize before
+// returning so callers can read `result.cards.length` without a guard.
+
+export function normalizeSearchResult(response: TakoSearchResponse): TakoSearchResult {
+  return {
+    ...response,
+    cards: response.cards ?? [],
+    web_results: response.web_results ?? [],
+  };
+}
+
+export function normalizeAnswerResult(response: TakoAnswerResponse): TakoAnswerResult {
+  return {
+    ...response,
+    cards: response.cards ?? [],
+    web_results: response.web_results ?? [],
+  };
+}
+
+export function normalizeContentsResult(response: TakoContentsResponse): TakoContentsResult {
+  return { ...response, contents: response.contents ?? [] };
 }

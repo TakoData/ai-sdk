@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import { takoAnswer } from "../src/tools/answer";
 import { stubFetch, runTool } from "./_helpers";
 
-const OK = JSON.stringify({ answer: "AMD grew faster.", cards: [], web_results: [], contents_total_cost: 0, request_id: "r" });
+const OK = JSON.stringify({ answer: "AMD grew faster.", cards: [], web_results: [], request_id: "r" });
 
 afterEach(() => vi.unstubAllGlobals());
 
