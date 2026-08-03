@@ -32,7 +32,7 @@ import { openai } from '@ai-sdk/openai';
 import { generateText, isStepCount } from 'ai';
 
 const { text } = await generateText({
-  model: openai('gpt-4o-mini'),
+  model: openai('gpt-5.4-mini'),
   prompt: 'Did AMD or Nvidia grow headcount faster over the last decade?',
   tools: { tako_answer: takoAnswer() },
   stopWhen: isStepCount(5),

@@ -5,7 +5,7 @@ import { takoSearch } from "../src/index";
 // Run: pnpm exec tsx --env-file=.env examples/search.ts
 async function main() {
   const { text, steps } = await generateText({
-    model: openai("gpt-4o-mini"),
+    model: openai("gpt-5.4-mini"),
     prompt: "Compare Nvidia and AMD full-time employee counts since 2013.",
     tools: { tako_search: takoSearch() },
     stopWhen: isStepCount(5),
