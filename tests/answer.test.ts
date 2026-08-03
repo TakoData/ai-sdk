@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import { takoAnswer } from "../src/tools/answer";
 import { stubFetch, runTool } from "./_helpers";
 
-const OK = JSON.stringify({ answer: "AMD grew faster.", cards: [], web_results: [], contents_total_cost: 0, request_id: "r" });
+const OK = JSON.stringify({ answer: "AMD grew faster.", cards: [], web_results: [], request_id: "r" });
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -20,5 +20,15 @@ describe("takoAnswer", () => {
       locale: "en-US",
     });
     expect((res as any).answer).toBe("AMD grew faster.");
+  });
+
+  it("normalizes absent collections to empty arrays", async () => {
+    // The contract guarantees only `answer` and `request_id` here, so a bare
+    // response is valid. Callers still get arrays they can read without a guard.
+    stubFetch(200, JSON.stringify({ answer: "x", request_id: "r" }));
+    const res = (await runTool(takoAnswer({ apiKey: "key" }), { query: "q" })) as any;
+    expect(res.cards).toEqual([]);
+    expect(res.web_results).toEqual([]);
+    expect(res.answer).toBe("x");
   });
 });

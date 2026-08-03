@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import { takoSearch } from "../src/tools/search";
 import { stubFetch, runTool } from "./_helpers";
 
-const OK = JSON.stringify({ cards: [], web_results: [], contents_total_cost: 0, request_id: "r" });
+const OK = JSON.stringify({ cards: [], web_results: [], request_id: "r" });
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -28,7 +28,7 @@ describe("takoSearch", () => {
     const t = takoSearch({
       apiKey: "key",
       effort: "deep",
-      sources: { data: { count: 10, deferDataRetrieval: true } },
+      sources: { data: { count: 10, includeContents: true } },
       timezone: "America/New_York",
       outputSettings: { imageDarkMode: true },
     });
@@ -39,7 +39,7 @@ describe("takoSearch", () => {
       effort: "deep",
       country_code: "US",
       locale: "en-US",
-      sources: { data: { count: 10, defer_data_retrieval: true } },
+      sources: { data: { count: 10, include_contents: true } },
       timezone: "America/New_York",
       output_settings: { image_dark_mode: true },
     });
@@ -49,19 +49,45 @@ describe("takoSearch", () => {
     const fetchMock = stubFetch(200, OK);
     const t = takoSearch({
       apiKey: "key",
-      sources: { tako: { count: 10, deferDataRetrieval: true } },
+      sources: { tako: { count: 10, includeContents: true } },
     });
     await runTool(t, { query: "x" });
     const init = fetchMock.mock.calls[0][1] as RequestInit;
     const body = JSON.parse(init.body as string);
-    expect(body.sources).toEqual({ data: { count: 10, defer_data_retrieval: true } });
+    expect(body.sources).toEqual({ data: { count: 10, include_contents: true } });
+  });
+
+  it("normalizes absent collections to empty arrays", async () => {
+    // The API guarantees only request_id, so a valid response can omit both
+    // collections. Callers still get arrays they can read without a guard.
+    stubFetch(200, JSON.stringify({ request_id: "r" }));
+    const res = (await runTool(takoSearch({ apiKey: "key" }), { query: "x" })) as any;
+    expect(res.cards).toEqual([]);
+    expect(res.web_results).toEqual([]);
+    expect(res.request_id).toBe("r");
+  });
+
+  it("passes usage through untouched", async () => {
+    stubFetch(
+      200,
+      JSON.stringify({
+        request_id: "r",
+        usage: { total_cost_usd: 0.03, compute: { cost_usd: 0.01 }, data: { cost_usd: 0.02, datasets: 2 } },
+      }),
+    );
+    const res = (await runTool(takoSearch({ apiKey: "key" }), { query: "x" })) as any;
+    expect(res.usage).toEqual({
+      total_cost_usd: 0.03,
+      compute: { cost_usd: 0.01 },
+      data: { cost_usd: 0.02, datasets: 2 },
+    });
   });
 
   it("honors baseUrl override (trailing slash stripped)", async () => {
     const fetchMock = stubFetch(200, OK);
-    const t = takoSearch({ apiKey: "key", baseUrl: "https://staging.trytako.com/" });
+    const t = takoSearch({ apiKey: "key", baseUrl: "https://e.com/" });
     await runTool(t, { query: "x" });
-    expect(fetchMock.mock.calls[0][0]).toBe("https://staging.trytako.com/api/v3/search");
+    expect(fetchMock.mock.calls[0][0]).toBe("https://e.com/api/v3/search");
   });
 
   it("falls back to TAKO_API_KEY env and throws clearly when unset", async () => {

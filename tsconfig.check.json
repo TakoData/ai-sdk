@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": { "noEmit": true, "rootDir": "." },
-  "include": ["src", "tests", "examples"]
+  "include": ["src", "tests", "examples"],
+  // Compiled on purpose by tests/contract/types.conformance.test.ts, which
+  // asserts it compiles clean against tako-sdk. Excluded here so drift surfaces
+  // as that one named test failing, not as noise across `pnpm typecheck`.
+  "exclude": ["node_modules", "dist", "tests/contract/types.conformance.ts"]
 }

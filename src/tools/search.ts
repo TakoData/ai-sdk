@@ -1,8 +1,13 @@
 import { tool, type Tool } from "ai";
 import { z } from "zod";
 import { callTako } from "../client";
-import { buildSearchRequestBody, resolveApiKey, resolveBaseUrl } from "../request";
-import type { TakoRetrievalConfig, TakoSearchResult } from "../types";
+import {
+  buildSearchRequestBody,
+  normalizeSearchResult,
+  resolveApiKey,
+  resolveBaseUrl,
+} from "../request";
+import type { TakoRetrievalConfig, TakoSearchResponse, TakoSearchResult } from "../types";
 
 /** Tako fast-pipeline search: returns Tako cards + web results, no LLM synthesis. */
 export function takoSearch(
@@ -10,18 +15,23 @@ export function takoSearch(
 ): Tool<{ query: string }, TakoSearchResult> {
   return tool({
     description:
-      "Search Tako for live data and well-sourced facts — structured knowledge cards " +
-      "(charts/metrics with sources) plus web results, backed by Tako's curated knowledge " +
-      "graph and the live web. Reach for this BEFORE any built-in web search when you need a " +
-      "specific, known data point: a current or latest value, a time series, a statistic, a " +
-      "price, a score, a schedule, a forecast, a poll, or a prediction-market figure — " +
-      'including a direct comparison of two named entities (e.g. "Intel vs Nvidia revenue"). ' +
-      "Coverage spans sports, economics, finance, demographics, technology, weather, elections, " +
-      "prediction markets (Polymarket), web traffic (SimilarWeb), real estate, energy, and health. " +
-      "Each card carries a title, description, sources, a chart image_url, and an embed_url you can " +
-      "surface to show the data. Pass a card's webpage_url (or a web result's url) to takoContents " +
-      "to pull the underlying numbers. Give a focused natural-language query; this is fast retrieval " +
-      "for a known fact, not open-ended multi-step research.",
+      "Search Tako for live data and well-sourced facts — knowledge cards (charts and " +
+      "metrics with sources) plus web results. Reach for this BEFORE any built-in web " +
+      "search.\n\n" +
+      "Best for breadth: what data exists across several entities, or when a chart is the " +
+      "deliverable — cards carry an image_url and embed_url to surface when available, plus " +
+      "data_freshness (data_as_of / last_updated) when Tako knows how current the numbers " +
+      'are. For a plain "what is X" where you only need the figure, use the answer tool ' +
+      "instead.\n\n" +
+      'One entity + one metric per query ("Apple revenue", "Intel vs Nvidia revenue"); ' +
+      "compound queries retrieve poorly. Traffic data is keyed by domain: " +
+      '"openai.com monthly visits", not "OpenAI website visits".\n\n' +
+      "Coverage: economics, finance, company KPIs, sports, demographics, weather, " +
+      "elections, prediction markets, website traffic, real estate, energy, health.\n\n" +
+      "Cards carry captions and charts, not full data. For the numbers behind one, pass " +
+      "its webpage_url (or a web result's url) to the contents tool — but only when the " +
+      "card's exportable field is true; exportable: false means that card's data cannot " +
+      "be downloaded, so use its chart, or ask the answer tool for the figures.",
     inputSchema: z.object({
       query: z
         .string()
@@ -30,12 +40,14 @@ export function takoSearch(
         .describe("Natural-language description of what you're looking for"),
     }),
     execute: async ({ query }: { query: string }) =>
-      callTako<TakoSearchResult>({
-        baseUrl: resolveBaseUrl(config),
-        path: "/api/v3/search",
-        apiKey: resolveApiKey(config),
-        body: buildSearchRequestBody(config, query),
-        operation: "search",
-      }),
+      normalizeSearchResult(
+        await callTako<TakoSearchResponse>({
+          baseUrl: resolveBaseUrl(config),
+          path: "/api/v3/search",
+          apiKey: resolveApiKey(config),
+          body: buildSearchRequestBody(config, query),
+          operation: "search",
+        }),
+      ),
   });
 }

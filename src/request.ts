@@ -1,4 +1,13 @@
-import type { TakoRetrievalConfig } from "./types";
+import type {
+  TakoAnswerResponse,
+  TakoAnswerResult,
+  TakoContentsMode,
+  TakoContentsResponse,
+  TakoContentsResult,
+  TakoRetrievalConfig,
+  TakoSearchResponse,
+  TakoSearchResult,
+} from "./types";
 
 const DEFAULT_BASE_URL = "https://tako.com";
 
@@ -16,7 +25,7 @@ export interface SearchRequestBody {
   country_code: string;
   locale: string;
   sources?: {
-    data?: { count?: number; include_contents?: boolean; defer_data_retrieval?: boolean };
+    data?: { count?: number; include_contents?: boolean };
     web?: { count?: number; include_contents?: boolean };
   };
   timezone?: string;
@@ -40,7 +49,6 @@ export function buildSearchRequestBody(config: TakoRetrievalConfig, query: strin
       const data: NonNullable<NonNullable<SearchRequestBody["sources"]>["data"]> = {};
       if (dataSource.count !== undefined) data.count = dataSource.count;
       if (dataSource.includeContents !== undefined) data.include_contents = dataSource.includeContents;
-      if (dataSource.deferDataRetrieval !== undefined) data.defer_data_retrieval = dataSource.deferDataRetrieval;
       sources.data = data;
     }
     if (config.sources.web) {
@@ -62,4 +70,41 @@ export function buildSearchRequestBody(config: TakoRetrievalConfig, query: strin
   }
 
   return body;
+}
+
+export interface ContentsRequestBody {
+  url: string;
+  mode: TakoContentsMode;
+}
+
+/** Map a url + delivery mode to the POST body the contents endpoint expects. */
+export function buildContentsRequestBody(url: string, mode: TakoContentsMode): ContentsRequestBody {
+  return { url, mode };
+}
+
+// ----- Response normalizers -----
+//
+// The API guarantees only `request_id` (plus `answer` on the answer surface); the
+// contract permits omitting the collections, though it currently sends them
+// empty. Normalizing either shape lets callers read `result.cards.length`
+// without a guard.
+
+export function normalizeSearchResult(response: TakoSearchResponse): TakoSearchResult {
+  return {
+    ...response,
+    cards: response.cards ?? [],
+    web_results: response.web_results ?? [],
+  };
+}
+
+export function normalizeAnswerResult(response: TakoAnswerResponse): TakoAnswerResult {
+  return {
+    ...response,
+    cards: response.cards ?? [],
+    web_results: response.web_results ?? [],
+  };
+}
+
+export function normalizeContentsResult(response: TakoContentsResponse): TakoContentsResult {
+  return { ...response, contents: response.contents ?? [] };
 }
