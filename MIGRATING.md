@@ -2,7 +2,7 @@
 
 ## 2.x → 3.0
 
-3.0 realigns this SDK's types with the current Tako API. Every change below is a case where 2.x described something the API no longer does — so if code depended on it, it was already broken at runtime, whatever TypeScript said.
+3.0 realigns this SDK's types with the current Tako API, and opens up the request options 2.x could not reach. Every **change** below is a case where 2.x described something the API no longer does — so if code depended on it, it was already broken at runtime, whatever TypeScript said. The **New options** section at the end is purely additive: nothing there requires an edit to working 2.x code.
 
 `tests/contract/` validates these types against Tako's published OpenAPI document and against [`tako-sdk`](https://www.npmjs.com/package/tako-sdk), Tako's official generated client, so a type that stops matching either one fails CI. Both are pinned snapshots, refreshed deliberately rather than continuously.
 
@@ -96,8 +96,37 @@ If you want the unnormalized wire shape, import `TakoSearchResponse`, `TakoAnswe
 const downloadable = result.cards.filter((c) => c.exportable);
 ```
 
+### New options
+
+3.0 adds 16 request options that 2.x could not reach, and now covers every property the API's request schemas define — the contract suite asserts that, so an option Tako adds later fails the build rather than going quietly missing. Every option is optional, so no working 2.x call needs editing. The full tables live in the [README](./README.md#search-and-answer-options); this section covers only what a 2.x reader would otherwise get wrong.
+
+**One rename to be aware of.** `TakoCardSourceOptions` is now `TakoDataSourceOptions`, because the data and web sources no longer take the same fields. The old name still works as a deprecated alias, so nothing breaks — but the two are no longer interchangeable, and code that passed one options object to both `sources.data` and `sources.web` will not type-check against the fields added below.
+
+**`content_format` is now two different things.** The response field renamed from `format` (see **Content format** above) is what the API *sends*. There is also now a `contentFormat` **request** option that chooses it. Same concept, opposite direction:
+
+```ts
+// Ask for a format...
+takoContents({ contentFormat: "json_records" });          // explicit fetch
+takoSearch({ sources: { data: { contentFormat: "csv" } } }); // card inlined by a search
+
+// ...and read which one arrived.
+if (item.content_format == null) readProse(item.data);
+```
+
+The defaults differ by surface: `json_compact` on `sources.data`, `csv` on `takoContents`. That is the API's behaviour, not a choice this SDK makes.
+
+**Three options carry consequences worth reading before you set them.**
+
+- **`maxRows`** — the fix for the 1000-row documentation error above. The first 20 rows are free; rows beyond that bill at the per-1,000-row rate. A value over the 2,000-row ceiling is **clamped, not rejected**, and you are billed for what comes back — so an over-large value yields a short export, a charge, and no error. Check `total_rows` and `truncated`.
+- **`quoteOnly`** — prices an export without fetching or charging. Use it to find the cost before committing. The item's `url` and payload come back null, and the API ignores `mode` and `contentFormat` on a quote.
+- **`strict`** — returns only cards matching a pinned node, so it requires a non-empty `nodeIds`. Setting one without the other throws from `takoSearch()`/`takoAnswer()` at construction rather than failing the request. Node ids come from the `/v1/graph` endpoints, which this SDK does not wrap.
+
+**One option is accepted but inert.** `sources.data.mode` is in the API's schema and the API documents it as having no effect on Tako cards. It is exposed for completeness; setting it changes nothing.
+
+This SDK does not check numeric ranges — the API owns them, so a limit Tako raises works without an SDK release.
+
 ### Also corrected
 
 `TakoKnowledgeCardMethodology.methodology_name` and `.methodology_description` are required keys with nullable values (`string | null`), not optional — matching the spec.
 
-Documentation fixes: 2.x claimed inline contents were "capped at 1000 rows". The real behaviour is a 20-row default against a 2,000-row ceiling. Raising it needs `max_rows`, which this SDK does not expose yet.
+Documentation fixes: 2.x claimed inline contents were "capped at 1000 rows". The real behaviour is a 20-row default against a 2,000-row ceiling. Raise it with `maxRows` (see **New options** below).
