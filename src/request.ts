@@ -27,9 +27,9 @@ export function resolveBaseUrl(config: { baseUrl?: string }): string {
 
 export interface SearchRequestBody {
   query: string;
-  effort: string;
-  country_code: string;
-  locale: string;
+  effort?: string;
+  country_code?: string;
+  locale?: string;
   sources?: { data?: DataSourceSettingsBody; web?: WebSourceSettingsBody };
   location?: GeoLocationBody;
   timezone?: string;
@@ -80,19 +80,40 @@ export interface DataSourceSettingsBody {
 }
 
 /**
- * Map data source options to the API's `DataSourceSettings`.
+ * Throw when data source options contradict themselves.
  *
- * The `strict` check is the only local validation in this file. It is a logical
- * invariant of the API, not a numeric limit: strict mode matches against
- * `node_ids`, so an empty list can never match a card and the billed request is
- * wasted. Numeric bounds stay unchecked so the API remains the authority.
+ * This is the only local validation in this file. It is a logical invariant of
+ * the API, not a numeric limit: strict mode matches against `node_ids`, so an
+ * empty list can never match a card. Numeric bounds stay unchecked so the API
+ * remains the authority.
+ *
+ * `takoSearch` and `takoAnswer` call this when the tool is built, so a developer
+ * sees the error at wiring time. Reaching it from `execute` instead would hand
+ * the message to the model, which can neither supply node ids nor edit the
+ * config, and which would retry until the step limit.
  */
-export function buildDataSourceSettings(o: TakoDataSourceOptions): DataSourceSettingsBody {
+export function assertValidDataSourceOptions(o: TakoDataSourceOptions): void {
   if (o.strict && !o.nodeIds?.length) {
     throw new Error(
       "strict requires a non-empty nodeIds. Add node ids from the /v1/graph endpoints, or set strict to false.",
     );
   }
+}
+
+/**
+ * Assert the invariants of whichever data source a retrieval config carries.
+ *
+ * Call this when a tool is built. `sources.tako` is the deprecated alias for
+ * `sources.data`, so both routes must be checked.
+ */
+export function assertValidRetrievalConfig(config: TakoRetrievalConfig): void {
+  const dataSource = config.sources?.data ?? config.sources?.tako;
+  if (dataSource) assertValidDataSourceOptions(dataSource);
+}
+
+/** Map data source options to the API's `DataSourceSettings`. */
+export function buildDataSourceSettings(o: TakoDataSourceOptions): DataSourceSettingsBody {
+  assertValidDataSourceOptions(o);
   const body: DataSourceSettingsBody = {};
   if (o.count !== undefined) body.count = o.count;
   if (o.includeContents !== undefined) body.include_contents = o.includeContents;
@@ -128,17 +149,24 @@ export function buildOutputSettings(
   return body;
 }
 
-/** Map a retrieval config + query to the snake_case POST body the API expects. */
+/**
+ * Map a retrieval config + query to the snake_case POST body the API expects.
+ *
+ * Only `query` is sent unconditionally, because only `query` is required. Every
+ * other key appears when the caller sets it. Earlier versions sent `effort`,
+ * `country_code` and `locale` with the values "fast", "US" and "en-US" — the
+ * server defaults, restated here. That made a default Tako changes server-side
+ * need a release of this SDK, which is the rot the section above avoids.
+ */
 export function buildSearchRequestBody(
   config: TakoRetrievalConfig,
   query: string,
 ): SearchRequestBody {
-  const body: SearchRequestBody = {
-    query,
-    effort: config.effort ?? "fast",
-    country_code: config.countryCode ?? "US",
-    locale: config.locale ?? "en-US",
-  };
+  const body: SearchRequestBody = { query };
+
+  if (config.effort !== undefined) body.effort = config.effort;
+  if (config.countryCode !== undefined) body.country_code = config.countryCode;
+  if (config.locale !== undefined) body.locale = config.locale;
 
   if (config.sources) {
     const sources: NonNullable<SearchRequestBody["sources"]> = {};

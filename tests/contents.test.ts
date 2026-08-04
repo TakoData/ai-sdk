@@ -105,4 +105,35 @@ describe("takoContents", () => {
       quote_only: true,
     });
   });
+
+  // The API ignores `mode` on a quote and nulls url and every payload field, so a
+  // description promising either delivery would send the model looking for content
+  // that never arrives.
+  it("describes quote-only mode instead of a delivery when quoteOnly is set", () => {
+    const quote = takoContents({ apiKey: "key", quoteOnly: true }).description ?? "";
+    expect(quote).toMatch(/price quotes only/i);
+    expect(quote).toMatch(/NO content/);
+    expect(quote).not.toMatch(/read and compute over the numbers/);
+
+    const url = takoContents({ apiKey: "key" }).description ?? "";
+    expect(url).toMatch(/presigned download url/);
+    expect(url).not.toMatch(/price quotes only/i);
+
+    const inline = takoContents({ apiKey: "key", mode: "inline" }).description ?? "";
+    expect(inline).toMatch(/read and compute over the numbers/);
+    expect(inline).not.toMatch(/price quotes only/i);
+  });
+
+  // quoteOnly outranks mode in the description, but the wire still carries both.
+  it("still sends mode alongside quote_only", async () => {
+    const fetchMock = stubFetch(200, OK);
+    const t = takoContents({ apiKey: "key", mode: "inline", quoteOnly: true });
+    await runTool(t, { url: "https://tako.com/card/x" });
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(init.body as string)).toEqual({
+      url: "https://tako.com/card/x",
+      mode: "inline",
+      quote_only: true,
+    });
+  });
 });
