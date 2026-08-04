@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildContentsRequestBody,
   buildDataSourceSettings,
+  buildGeoLocation,
   buildSearchRequestBody,
   buildWebSourceSettings,
 } from "../../src/request";
@@ -228,5 +229,54 @@ describe("DataSourceSettings — section contract", () => {
 
   it("allows strict false with no nodeIds", () => {
     expect(() => buildDataSourceSettings({ strict: false })).not.toThrow();
+  });
+});
+
+describe("GeoLocation — section contract", () => {
+  it("maps coordinates and validates against the schema", () => {
+    const body = buildGeoLocation({ latitude: 37.77, longitude: -122.42 });
+    expect(body).toEqual({ latitude: 37.77, longitude: -122.42 });
+    expect(check("GeoLocation", body).errors).toEqual([]);
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("GeoLocation").sort());
+  });
+});
+
+describe("SearchRequest — every documented option", () => {
+  it("builds a spec-valid body with all 12 search-side options set", () => {
+    const body = buildSearchRequestBody(
+      {
+        effort: "deep",
+        countryCode: "GB",
+        locale: "en-GB",
+        timezone: "Europe/London",
+        location: { latitude: 51.5, longitude: -0.12 },
+        sources: {
+          data: {
+            count: 10, includeContents: true, mode: "inline",
+            contentFormat: "json_compact", nodeIds: ["mt::revenue::abc"], strict: true,
+          },
+          web: {
+            count: 3, includeContents: true, category: "news",
+            includeDomains: ["sec.gov"], excludeDomains: ["example.com"],
+            snippetMaxChars: 500, articleContentMaxChars: 20000,
+            publishedAfter: "2026-01-01", publishedBefore: "2026-08-01",
+          },
+        },
+        outputSettings: { imageDarkMode: true, forceRefresh: false },
+      },
+      "q",
+    );
+    expect(check("SearchRequest", body).errors).toEqual([]);
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("SearchRequest").sort());
+  });
+
+  it("routes the deprecated tako alias through the data builder", () => {
+    const body = buildSearchRequestBody(
+      { sources: { tako: { contentFormat: "csv", nodeIds: ["a"], strict: true } } },
+      "q",
+    );
+    expect(body.sources?.data?.content_format).toBe("csv");
+    expect(body.sources?.data?.strict).toBe(true);
+    expect(check("SearchRequest", body).errors).toEqual([]);
   });
 });

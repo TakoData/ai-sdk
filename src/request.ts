@@ -6,6 +6,7 @@ import type {
   TakoContentsResponse,
   TakoContentsResult,
   TakoDataSourceOptions,
+  TakoGeoLocation,
   TakoRetrievalConfig,
   TakoSearchResponse,
   TakoSearchResult,
@@ -28,12 +29,10 @@ export interface SearchRequestBody {
   effort: string;
   country_code: string;
   locale: string;
-  sources?: {
-    data?: { count?: number; include_contents?: boolean };
-    web?: { count?: number; include_contents?: boolean };
-  };
+  sources?: { data?: DataSourceSettingsBody; web?: WebSourceSettingsBody };
+  location?: GeoLocationBody;
   timezone?: string;
-  output_settings?: { image_dark_mode?: boolean; force_refresh?: boolean };
+  output_settings?: OutputSettingsBody;
 }
 
 export interface WebSourceSettingsBody {
@@ -103,8 +102,36 @@ export function buildDataSourceSettings(o: TakoDataSourceOptions): DataSourceSet
   return body;
 }
 
+export interface GeoLocationBody {
+  latitude: number;
+  longitude: number;
+}
+
+/** Map end-user coordinates to the API's `GeoLocation`. Both keys are required. */
+export function buildGeoLocation(o: TakoGeoLocation): GeoLocationBody {
+  return { latitude: o.latitude, longitude: o.longitude };
+}
+
+export interface OutputSettingsBody {
+  image_dark_mode?: boolean;
+  force_refresh?: boolean;
+}
+
+/** Map output options to the API's `OutputSettings`. */
+export function buildOutputSettings(
+  o: NonNullable<TakoRetrievalConfig["outputSettings"]>,
+): OutputSettingsBody {
+  const body: OutputSettingsBody = {};
+  if (o.imageDarkMode !== undefined) body.image_dark_mode = o.imageDarkMode;
+  if (o.forceRefresh !== undefined) body.force_refresh = o.forceRefresh;
+  return body;
+}
+
 /** Map a retrieval config + query to the snake_case POST body the API expects. */
-export function buildSearchRequestBody(config: TakoRetrievalConfig, query: string): SearchRequestBody {
+export function buildSearchRequestBody(
+  config: TakoRetrievalConfig,
+  query: string,
+): SearchRequestBody {
   const body: SearchRequestBody = {
     query,
     effort: config.effort ?? "fast",
@@ -116,29 +143,14 @@ export function buildSearchRequestBody(config: TakoRetrievalConfig, query: strin
     const sources: NonNullable<SearchRequestBody["sources"]> = {};
     // `data` is the curated Tako source; `tako` is the deprecated legacy alias.
     const dataSource = config.sources.data ?? config.sources.tako;
-    if (dataSource) {
-      const data: NonNullable<NonNullable<SearchRequestBody["sources"]>["data"]> = {};
-      if (dataSource.count !== undefined) data.count = dataSource.count;
-      if (dataSource.includeContents !== undefined) data.include_contents = dataSource.includeContents;
-      sources.data = data;
-    }
-    if (config.sources.web) {
-      const web: NonNullable<NonNullable<SearchRequestBody["sources"]>["web"]> = {};
-      if (config.sources.web.count !== undefined) web.count = config.sources.web.count;
-      if (config.sources.web.includeContents !== undefined) web.include_contents = config.sources.web.includeContents;
-      sources.web = web;
-    }
+    if (dataSource) sources.data = buildDataSourceSettings(dataSource);
+    if (config.sources.web) sources.web = buildWebSourceSettings(config.sources.web);
     body.sources = sources;
   }
 
+  if (config.location !== undefined) body.location = buildGeoLocation(config.location);
   if (config.timezone !== undefined) body.timezone = config.timezone;
-
-  if (config.outputSettings) {
-    const output: NonNullable<SearchRequestBody["output_settings"]> = {};
-    if (config.outputSettings.imageDarkMode !== undefined) output.image_dark_mode = config.outputSettings.imageDarkMode;
-    if (config.outputSettings.forceRefresh !== undefined) output.force_refresh = config.outputSettings.forceRefresh;
-    body.output_settings = output;
-  }
+  if (config.outputSettings) body.output_settings = buildOutputSettings(config.outputSettings);
 
   return body;
 }

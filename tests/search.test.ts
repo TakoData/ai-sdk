@@ -90,6 +90,26 @@ describe("takoSearch", () => {
     expect(fetchMock.mock.calls[0][0]).toBe("https://e.com/api/v3/search");
   });
 
+  it("sends the new web filters on the wire", async () => {
+    const fetchMock = stubFetch(200, OK);
+    const t = takoSearch({
+      apiKey: "key",
+      sources: { web: { includeDomains: ["sec.gov"], publishedAfter: "2026-01-01" } },
+    });
+    await runTool(t, { query: "x" });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(body.sources.web.include_domains).toEqual(["sec.gov"]);
+    expect(body.sources.web.published_after).toBe("2026-01-01");
+  });
+
+  it("throws before fetching when strict has no nodeIds", async () => {
+    const fetchMock = stubFetch(200, OK);
+    const t = takoSearch({ apiKey: "key", sources: { data: { strict: true } } });
+    await expect(runTool(t, { query: "x" })).rejects.toThrow(/strict requires a non-empty nodeIds/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("falls back to TAKO_API_KEY env and throws clearly when unset", async () => {
     const saved = { k: process.env.TAKO_API_KEY, t: process.env.TAKO_API_TOKEN };
     delete process.env.TAKO_API_KEY;
