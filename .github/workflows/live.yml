@@ -1,0 +1,37 @@
+name: live
+
+# Never on pull_request. These tests spend money on every run, and a pull request
+# from a fork cannot read secrets, so it would fail for everyone outside the org.
+on:
+  workflow_dispatch:
+  schedule:
+    # Mondays, 13:00 UTC. The point of a schedule is to notice the API moving
+    # under a published version: the contract suite reads a pinned snapshot and
+    # only moves when somebody runs `pnpm spec:refresh`, so nothing else fails
+    # when Tako changes and this repo does not.
+    - cron: "0 13 * * 1"
+
+# One run at a time. Concurrent runs on the same key hit Tako's throttle and
+# report a rate limit as a contract failure.
+concurrency:
+  group: live-api
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    # Absent secret means an unrunnable job, which should not read as a failure.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.LIVE_TESTS_ENABLED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:live
+        env:
+          TAKO_API_KEY: ${{ secrets.TAKO_API_KEY }}
+          # Optional. Leave unset to test the same host the SDK defaults to.
+          TAKO_BASE_URL: ${{ vars.TAKO_BASE_URL }}
