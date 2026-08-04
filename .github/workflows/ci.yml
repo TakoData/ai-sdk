@@ -18,3 +18,8 @@ jobs:
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test
+      # Everything above tests src/. These two test the artifact a consumer
+      # installs, which is where a missing file, an unresolvable `exports` map, or
+      # a devDependency imported at run time shows up.
+      - run: pnpm lint:package
+      - run: pnpm test:package

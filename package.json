@@ -8,10 +8,11 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
+  "sideEffects": false,
   "files": [
     "dist"
   ],
@@ -21,6 +22,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:contract": "vitest run tests/contract",
+    "test:package": "node scripts/verify-package.mjs",
+    "lint:package": "npx -y publint@latest --strict --pack npm && npx -y @arethetypeswrong/cli@latest --pack . --ignore-rules cjs-resolves-to-esm",
     "spec:refresh": "curl -fsSL https://docs.tako.com/api-reference/openapi.yaml -o tests/contract/openapi.yaml",
     "prepublishOnly": "pnpm build"
   },
