@@ -133,7 +133,9 @@ Both tools take the same config. Every field is optional; omit one and the API's
 | `maxChars` | `number` | Web page text only. Server default 1000000, the full page text. |
 | `quoteOnly` | `boolean` | Price the export without fetching it. The request is free and the payload is null. |
 
-This SDK does not check the numeric ranges. The API enforces them and returns a 400, so a limit Tako raises works immediately without an SDK release.
+This SDK does not check the numeric ranges. The API enforces them, so a limit Tako raises works immediately without an SDK release. Most out-of-range values return a 400.
+
+**`maxRows` is the exception, and it fails quietly.** A value above the 2,000-row ceiling is clamped, not rejected, and billing counts the rows actually returned. You get a short export, a charge for it, and no error. Check `total_rows` and `truncated` on the returned item to see what you actually got.
 
 ## Responses
 
@@ -174,7 +176,7 @@ Each item carries a `cost` (USD) and either a presigned `url` + `expires_at` (ur
 
 `total_rows` and `truncated` tell you whether the card held more rows than were returned.
 
-Which format you get depends on the surface: `takoContents` returns `'csv'` for cards and no format for web pages, while a card inlined by `sources.data.includeContents` arrives as `'json_compact'` (a `dataset`). Requesting a specific format is not configurable yet.
+Which format you get depends on the surface. Left unset, `takoContents` returns `'csv'` for cards and no format for web pages, while a card inlined by `sources.data.includeContents` arrives as `'json_compact'` (a `dataset`). Set `contentFormat` to choose: on `takoContents` for an explicit fetch, or on `sources.data` for a card inlined by a search.
 
 `content_format` is optional as well as nullable, so branch on it loosely — `content_format == null` means web text; `=== null` misses the absent case.
 

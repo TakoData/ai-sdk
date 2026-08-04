@@ -37,7 +37,12 @@ export interface TakoBaseConfig {
 }
 
 export interface TakoSourceOptions {
-  /** Max results for this source, 1-20 (server default 5). */
+  /**
+   * Max results for this source, 1-20.
+   *
+   * The server default differs by tool: `takoSearch` returns 5, `takoAnswer`
+   * returns 3. Set this value when you need the same count from both.
+   */
   count?: number;
   /** Inline this source's underlying data in the response. */
   includeContents?: boolean;
@@ -78,9 +83,18 @@ export interface TakoWebSourceOptions extends TakoSourceOptions {
   snippetMaxChars?: number;
   /** Character cap on full article text when `includeContents` is true. Server default 30000. */
   articleContentMaxChars?: number;
-  /** Keep results published on or after this ISO date, "YYYY-MM-DD". */
+  /**
+   * Keep results published on or after this ISO date, "YYYY-MM-DD".
+   *
+   * This is not a recency guarantee. The API keeps a result whose publication
+   * date it does not know, so undated pages still arrive.
+   */
   publishedAfter?: string;
-  /** Keep results published on or before this ISO date, "YYYY-MM-DD". */
+  /**
+   * Keep results published on or before this ISO date, "YYYY-MM-DD".
+   *
+   * The API keeps a result whose publication date it does not know.
+   */
   publishedBefore?: string;
 }
 
