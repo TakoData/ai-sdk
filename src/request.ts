@@ -7,6 +7,8 @@ import type {
   TakoRetrievalConfig,
   TakoSearchResponse,
   TakoSearchResult,
+  TakoWebCategory,
+  TakoWebSourceOptions,
 } from "./types";
 
 const DEFAULT_BASE_URL = "https://tako.com";
@@ -30,6 +32,40 @@ export interface SearchRequestBody {
   };
   timezone?: string;
   output_settings?: { image_dark_mode?: boolean; force_refresh?: boolean };
+}
+
+export interface WebSourceSettingsBody {
+  count?: number;
+  include_contents?: boolean;
+  category?: TakoWebCategory;
+  include_domains?: string[];
+  exclude_domains?: string[];
+  snippet_max_chars?: number;
+  article_content_max_chars?: number;
+  published_after?: string;
+  published_before?: string;
+}
+
+/**
+ * Map web source options to the API's `WebSourceSettings`.
+ *
+ * Numeric bounds are deliberately not checked here. The schema carries them and
+ * the API enforces them, so a limit raised by Tako needs no release of this SDK.
+ */
+export function buildWebSourceSettings(o: TakoWebSourceOptions): WebSourceSettingsBody {
+  const body: WebSourceSettingsBody = {};
+  if (o.count !== undefined) body.count = o.count;
+  if (o.includeContents !== undefined) body.include_contents = o.includeContents;
+  if (o.category !== undefined) body.category = o.category;
+  if (o.includeDomains !== undefined) body.include_domains = o.includeDomains;
+  if (o.excludeDomains !== undefined) body.exclude_domains = o.excludeDomains;
+  if (o.snippetMaxChars !== undefined) body.snippet_max_chars = o.snippetMaxChars;
+  if (o.articleContentMaxChars !== undefined) {
+    body.article_content_max_chars = o.articleContentMaxChars;
+  }
+  if (o.publishedAfter !== undefined) body.published_after = o.publishedAfter;
+  if (o.publishedBefore !== undefined) body.published_before = o.publishedBefore;
+  return body;
 }
 
 /** Map a retrieval config + query to the snake_case POST body the API expects. */

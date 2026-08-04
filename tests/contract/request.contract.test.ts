@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildContentsRequestBody, buildSearchRequestBody } from "../../src/request";
+import { buildContentsRequestBody, buildSearchRequestBody, buildWebSourceSettings } from "../../src/request";
 import { check, propertiesOf, spec } from "./spec";
 
 /**
@@ -127,5 +127,51 @@ describe("POST /v1/contents — request body contract", () => {
       expect(forbidsExtras(name), `${name} should forbid extras`).toBe(true);
     }
     expect(forbidsExtras("ContentsRequest")).toBe(false);
+  });
+});
+
+describe("WebSourceSettings — section contract", () => {
+  it("maps every documented option to its wire name", () => {
+    const body = buildWebSourceSettings({
+      count: 3,
+      includeContents: true,
+      category: "news",
+      includeDomains: ["sec.gov"],
+      excludeDomains: ["example.com"],
+      snippetMaxChars: 500,
+      articleContentMaxChars: 20000,
+      publishedAfter: "2026-01-01",
+      publishedBefore: "2026-08-01",
+    });
+    expect(body).toEqual({
+      count: 3,
+      include_contents: true,
+      category: "news",
+      include_domains: ["sec.gov"],
+      exclude_domains: ["example.com"],
+      snippet_max_chars: 500,
+      article_content_max_chars: 20000,
+      published_after: "2026-01-01",
+      published_before: "2026-08-01",
+    });
+    expect(check("WebSourceSettings", body).errors).toEqual([]);
+  });
+
+  it("omits absent options rather than sending nulls", () => {
+    // The schema forbids unknown properties and applies its own defaults, so an
+    // unset option must not appear at all.
+    expect(buildWebSourceSettings({})).toEqual({});
+    expect(check("WebSourceSettings", {}).errors).toEqual([]);
+  });
+
+  it("covers every property the schema defines", () => {
+    // Fails when Tako adds a web option, which is the signal to expose it.
+    const body = buildWebSourceSettings({
+      count: 1, includeContents: true, category: "news",
+      includeDomains: [], excludeDomains: [], snippetMaxChars: 1,
+      articleContentMaxChars: 1, publishedAfter: "2026-01-01",
+      publishedBefore: "2026-01-02",
+    });
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("WebSourceSettings").sort());
   });
 });
