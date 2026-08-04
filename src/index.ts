@@ -9,6 +9,9 @@ export type {
   TakoContentsConfig,
   TakoSourceOptions,
   TakoCardSourceOptions,
+  TakoDataSourceOptions,
+  TakoWebSourceOptions,
+  TakoGeoLocation,
   // Enums / unions
   TakoSearchEffort,
   TakoContentsMode,
@@ -18,6 +21,7 @@ export type {
   TakoKnowledgeCardRelevance,
   TakoGraphNodeType,
   TakoDatasetColumnType,
+  TakoWebCategory,
   // Usage
   TakoUsage,
   TakoUsageCompute,

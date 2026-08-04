@@ -10,6 +10,7 @@ import type {
   TakoRetrievalConfig,
   TakoContentsConfig,
   TakoUsage,
+  TakoCardSourceOptions,
 } from "../src/types";
 
 describe("types", () => {
@@ -122,5 +123,58 @@ describe("types", () => {
     const c: TakoContentsConfig = { apiKey: "k", mode: "inline" };
     expect(r.effort).toBe("deep");
     expect(c.mode).toBe("inline");
+  });
+
+  it("accepts every documented data-source option", () => {
+    const c: TakoRetrievalConfig = {
+      sources: {
+        data: {
+          count: 10,
+          includeContents: true,
+          mode: "inline",
+          contentFormat: "json_records",
+          nodeIds: ["mt::revenue::abc123"],
+          strict: true,
+        },
+      },
+    };
+    expect(c.sources?.data?.strict).toBe(true);
+  });
+
+  it("accepts every documented web-source option", () => {
+    const c: TakoRetrievalConfig = {
+      sources: {
+        web: {
+          count: 3,
+          includeContents: true,
+          category: "news",
+          includeDomains: ["sec.gov"],
+          excludeDomains: ["example.com"],
+          snippetMaxChars: 500,
+          articleContentMaxChars: 20000,
+          publishedAfter: "2026-01-01",
+          publishedBefore: "2026-08-01",
+        },
+      },
+      location: { latitude: 37.77, longitude: -122.42 },
+    };
+    expect(c.sources?.web?.category).toBe("news");
+    expect(c.location?.latitude).toBeCloseTo(37.77);
+  });
+
+  it("accepts every documented contents option", () => {
+    const c: TakoContentsConfig = {
+      mode: "inline",
+      contentFormat: "csv",
+      maxRows: 100,
+      maxChars: 5000,
+      quoteOnly: true,
+    };
+    expect(c.quoteOnly).toBe(true);
+  });
+
+  it("keeps TakoCardSourceOptions usable as a deprecated alias", () => {
+    const o: TakoCardSourceOptions = { count: 5, strict: false };
+    expect(o.count).toBe(5);
   });
 });
