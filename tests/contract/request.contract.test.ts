@@ -7,7 +7,9 @@ import {
   buildSearchRequestBody,
   buildWebSourceSettings,
 } from "../../src/request";
-import { check, propertiesOf, spec } from "./spec";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { check, enumOf, propertiesOf, spec } from "./spec";
 
 /**
  * Request-side contract: every body this SDK sends must validate against Tako's
@@ -322,4 +324,57 @@ describe("SearchRequest — every documented option", () => {
     expect(body.sources?.data?.strict).toBe(true);
     expect(check("SearchRequest", body).errors).toEqual([]);
   });
+});
+
+/**
+ * Request-side enums, pinned against the vendored spec.
+ *
+ * `types.conformance.ts` already gates these three against `tako-sdk`. That
+ * catches drift from the generated client, but the two references move
+ * independently: a `pnpm spec:refresh` that adds a fourth effort level would pass
+ * CI until somebody separately bumped `tako-sdk`, so the two halves of the gate
+ * could disagree about which enum is current. `response.contract.test.ts` pins
+ * the response-side enums the same way.
+ */
+describe("request-side enums — pinned to the vendored spec", () => {
+  it("SearchEffortLevel is fast | instant | deep", () => {
+    expect(enumOf("SearchEffortLevel")).toEqual(["fast", "instant", "deep"]);
+  });
+
+  it("ContentsDeliveryMode is url | inline", () => {
+    expect(enumOf("ContentsDeliveryMode")).toEqual(["url", "inline"]);
+  });
+
+  it("WebCategory is news | sports | finance", () => {
+    expect(enumOf("WebCategory")).toEqual(["news", "sports", "finance"]);
+  });
+});
+
+/**
+ * The no-mirrored-bounds policy, enforced rather than asserted in a comment.
+ *
+ * Copying a server limit into this package is what made 3.0.0 necessary: the
+ * "capped at 1000 rows" claim went stale because a number lived where it could
+ * rot. The spec carries real bounds — `maxItems: 20` on the domain arrays, 1-20
+ * on counts, a 2000-row ceiling — and none of them may appear as code in the two
+ * files that map the options.
+ */
+describe("no server-side bound is mirrored in the request mapping", () => {
+  const sourceOf = (name: string) =>
+    readFileSync(fileURLToPath(new URL(`../../src/${name}`, import.meta.url)), "utf8")
+      // Strip block and line comments: the bounds are documented in prose on
+      // purpose, and only executable code is a drift hazard.
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/[^\n]*/g, "");
+
+  for (const name of ["request.ts", "types.ts"]) {
+    it(`${name} contains no numeric range check`, () => {
+      const code = sourceOf(name);
+      expect(code).not.toMatch(/\.min\(/);
+      expect(code).not.toMatch(/\.max\(/);
+      expect(code).not.toMatch(/maxItems/);
+      expect(code).not.toMatch(/\b2000\b/);
+      expect(code).not.toMatch(/Math\.(min|max)/);
+    });
+  }
 });
