@@ -27,6 +27,9 @@ import type {
   TakoDataset as OfficialTakoDataset,
   WebResult as OfficialWebResult,
   TakoSourceIndex as OfficialTakoSourceIndex,
+  SearchEffortLevel as OfficialSearchEffortLevel,
+  ContentsDeliveryMode as OfficialContentsDeliveryMode,
+  WebCategory as OfficialWebCategory,
   // Nested mirrored types — gated for key symmetry below.
   ColumnDescriptor as OfficialColumnDescriptor,
   DataFreshness as OfficialDataFreshness,
@@ -50,6 +53,7 @@ import type {
   TakoColumnDescriptor,
   TakoContentFormat,
   TakoContentItem,
+  TakoContentsMode,
   TakoContentsResponse,
   TakoContentsResult,
   TakoDataFreshness,
@@ -60,12 +64,14 @@ import type {
   TakoKnowledgeCardMethodology,
   TakoMetricDefinition,
   TakoResultContent,
+  TakoSearchEffort,
   TakoSearchResponse,
   TakoSearchResult,
   TakoSourceIndex,
   TakoUsage,
   TakoUsageCompute,
   TakoUsageData,
+  TakoWebCategory,
   TakoWebResult,
 } from "../../src/types";
 
@@ -120,6 +126,17 @@ export const format: TakoContentFormat = officialFormat;
 export const formatBack: OfficialContentsFormat = null as unknown as TakoContentFormat;
 export const sourceIndex: TakoSourceIndex = officialSourceIndex;
 export const sourceIndexBack: OfficialTakoSourceIndex = null as unknown as TakoSourceIndex;
+
+// Request-side enums. A stale member here is not a parse bug — it compiles, and
+// the API rejects the whole request. `request.contract.test.ts` does not reach
+// them: it validates one effort value and iterates hand-written mode literals,
+// so neither enumerates what the union declares.
+export const effort: TakoSearchEffort = null as unknown as OfficialSearchEffortLevel;
+export const effortBack: OfficialSearchEffortLevel = null as unknown as TakoSearchEffort;
+export const contentsMode: TakoContentsMode = null as unknown as OfficialContentsDeliveryMode;
+export const contentsModeBack: OfficialContentsDeliveryMode = null as unknown as TakoContentsMode;
+export const webCategory: TakoWebCategory = null as unknown as OfficialWebCategory;
+export const webCategoryBack: OfficialWebCategory = null as unknown as TakoWebCategory;
 
 // --- Key symmetry ---
 //
