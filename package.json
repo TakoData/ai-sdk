@@ -22,8 +22,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:contract": "vitest run tests/contract",
+    "test:live": "vitest run --config vitest.live.config.ts",
     "test:package": "node scripts/verify-package.mjs",
-    "lint:package": "npx -y publint@latest --strict --pack npm && npx -y @arethetypeswrong/cli@latest --pack . --ignore-rules cjs-resolves-to-esm",
+    "lint:package": "npm run --silent build && npx -y publint@latest --strict --pack npm && npx -y @arethetypeswrong/cli@latest --pack . --ignore-rules cjs-resolves-to-esm",
     "spec:refresh": "curl -fsSL https://docs.tako.com/api-reference/openapi.yaml -o tests/contract/openapi.yaml",
     "prepublishOnly": "pnpm build"
   },

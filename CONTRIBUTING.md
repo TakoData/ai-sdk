@@ -10,6 +10,7 @@ pnpm typecheck     # tsc over src + tests + examples
 pnpm build         # tsup → dist/
 pnpm lint:package  # publint + are-the-types-wrong, against the packed tarball
 pnpm test:package  # install the tarball in a scratch project and use it
+pnpm test:live     # real API calls — needs TAKO_API_KEY, costs money
 pnpm spec:refresh  # re-vendor tests/contract/openapi.yaml from docs.tako.com
 ```
 
@@ -47,6 +48,41 @@ The type check sets `skipLibCheck: true` on purpose. With it false, `tsc` audits
 every `.d.ts` under `node_modules`, and the `ai` package's own tree reports
 missing `@types/node` and `@types/json-schema` — another package's noise, loud
 enough to hide a real failure here.
+
+## Checking the API itself (`tests/live/`)
+
+Every other suite proves a request body is **legal** against a vendored snapshot of
+the OpenAPI document. None of them prove the API **honors** the option, or that the
+snapshot still matches reality — the gap that let the 2.x types rot for two months
+while every test stayed green.
+
+`tests/live/` closes it from the other side. It sends real requests and validates
+the responses with the same ajv validators the contract suite uses, so **a response
+that stops matching the vendored spec fails even though nothing in this repo
+changed.** That makes it the upstream drift detector the parity tests cannot be:
+those read a pinned snapshot and only move when someone runs `pnpm spec:refresh`.
+
+```bash
+TAKO_API_KEY=... pnpm test:live
+TAKO_API_KEY=... TAKO_BASE_URL=https://some-other-host pnpm test:live   # optional
+```
+
+- **Excluded from `pnpm test`** by `vitest.config.ts`, and only included by
+  `vitest.live.config.ts`. It costs money, so it must never run by accident.
+- **Skips without a key** rather than failing, so a contributor with no key sees
+  no red.
+- **Runs on a schedule** (`.github/workflows/live.yml`, Mondays 13:00 UTC) plus
+  manual dispatch. Never on `pull_request`: forks cannot read secrets, so it
+  would fail for every outside contributor.
+- Serial, with one retry, because the tests compare responses across requests and
+  Tako throttles per key.
+
+Two rules for anything you add there:
+
+1. **Assert contract, never content.** "A card came back" is stable. "The first
+   card is Nvidia revenue" is one ranking change from a false alarm.
+2. **Never trigger a billed export.** `quoteOnly` prices one for free, and that is
+   the only way this suite touches export pricing.
 
 ## Keeping the API contract honest
 
