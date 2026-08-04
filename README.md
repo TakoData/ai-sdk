@@ -88,6 +88,53 @@ takoContents({
 
 The LLM supplies only the dynamic input: `{ query }` for `takoSearch`/`takoAnswer`, and `{ url }` (a card's `webpage_url` or a web result's `url`) for `takoContents`.
 
+### Search and answer options
+
+Both tools take the same config. Every field is optional; omit one and the API's default applies.
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `effort` | `"fast" \| "instant" \| "deep"` | Default `"fast"`. |
+| `countryCode` / `locale` / `timezone` | `string` | Default `"US"` / `"en-US"`. |
+| `location` | `{ latitude, longitude }` | End-user coordinates. |
+| `outputSettings.imageDarkMode` | `boolean` | |
+| `outputSettings.forceRefresh` | `boolean` | Instant mode only. |
+
+**`sources.data`** — the curated Tako source:
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `count` | `number` | 1-20, server default 5. |
+| `includeContents` | `boolean` | Inline the card data. |
+| `contentFormat` | `"csv" \| "json_records" \| "json_compact"` | Server default `"json_compact"`. |
+| `nodeIds` | `string[]` | Pin graph nodes. Ids come from the `/v1/graph` endpoints. |
+| `strict` | `boolean` | Return only cards matching a pinned node. Requires `nodeIds`. |
+| `mode` | `"url" \| "inline"` | Accepted, but the API documents no effect on Tako cards. |
+
+**`sources.web`**:
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `count` | `number` | 1-20, server default 5. |
+| `includeContents` | `boolean` | Include full article text. |
+| `category` | `"news" \| "sports" \| "finance"` | Only `"news"` filters today. |
+| `includeDomains` / `excludeDomains` | `string[]` | Bare hosts, for example `"cnn.com"`. |
+| `publishedAfter` / `publishedBefore` | `string` | ISO `"YYYY-MM-DD"`. Results with no known date are kept. |
+| `snippetMaxChars` | `number` | Server default 1000. |
+| `articleContentMaxChars` | `number` | Server default 30000. |
+
+### Contents options
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `mode` | `"url" \| "inline"` | Default `"url"`. Changes the tool description the model reads. |
+| `contentFormat` | `"csv" \| "json_records" \| "json_compact"` | Server default `"csv"` on this surface. |
+| `maxRows` | `number` | Card exports only. The first 20 rows are free; **rows above that bill at the per-1000-row rate**. |
+| `maxChars` | `number` | Web page text only. |
+| `quoteOnly` | `boolean` | Price the export without fetching it. The request is free and the payload is null. |
+
+This SDK does not check the numeric ranges. The API enforces them and returns a 400, so a limit Tako raises works immediately without an SDK release.
+
 ## Responses
 
 `takoSearch` resolves to:
