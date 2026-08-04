@@ -1,9 +1,11 @@
 import type {
   TakoAnswerResponse,
   TakoAnswerResult,
+  TakoContentFormat,
   TakoContentsMode,
   TakoContentsResponse,
   TakoContentsResult,
+  TakoDataSourceOptions,
   TakoRetrievalConfig,
   TakoSearchResponse,
   TakoSearchResult,
@@ -65,6 +67,39 @@ export function buildWebSourceSettings(o: TakoWebSourceOptions): WebSourceSettin
   }
   if (o.publishedAfter !== undefined) body.published_after = o.publishedAfter;
   if (o.publishedBefore !== undefined) body.published_before = o.publishedBefore;
+  return body;
+}
+
+export interface DataSourceSettingsBody {
+  count?: number;
+  include_contents?: boolean;
+  mode?: TakoContentsMode;
+  content_format?: TakoContentFormat;
+  node_ids?: string[];
+  strict?: boolean;
+}
+
+/**
+ * Map data source options to the API's `DataSourceSettings`.
+ *
+ * The `strict` check is the only local validation in this file. It is a logical
+ * invariant of the API, not a numeric limit: strict mode matches against
+ * `node_ids`, so an empty list can never match a card and the billed request is
+ * wasted. Numeric bounds stay unchecked so the API remains the authority.
+ */
+export function buildDataSourceSettings(o: TakoDataSourceOptions): DataSourceSettingsBody {
+  if (o.strict && !o.nodeIds?.length) {
+    throw new Error(
+      "strict requires a non-empty nodeIds. Add node ids from the /v1/graph endpoints, or set strict to false.",
+    );
+  }
+  const body: DataSourceSettingsBody = {};
+  if (o.count !== undefined) body.count = o.count;
+  if (o.includeContents !== undefined) body.include_contents = o.includeContents;
+  if (o.mode !== undefined) body.mode = o.mode;
+  if (o.contentFormat !== undefined) body.content_format = o.contentFormat;
+  if (o.nodeIds !== undefined) body.node_ids = o.nodeIds;
+  if (o.strict !== undefined) body.strict = o.strict;
   return body;
 }
 

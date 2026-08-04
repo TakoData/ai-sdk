@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildContentsRequestBody, buildSearchRequestBody, buildWebSourceSettings } from "../../src/request";
+import {
+  buildContentsRequestBody,
+  buildDataSourceSettings,
+  buildSearchRequestBody,
+  buildWebSourceSettings,
+} from "../../src/request";
 import { check, propertiesOf, spec } from "./spec";
 
 /**
@@ -173,5 +178,55 @@ describe("WebSourceSettings — section contract", () => {
       publishedBefore: "2026-01-02",
     });
     expect(Object.keys(body).sort()).toEqual(propertiesOf("WebSourceSettings").sort());
+  });
+});
+
+describe("DataSourceSettings — section contract", () => {
+  it("maps every documented option to its wire name", () => {
+    const body = buildDataSourceSettings({
+      count: 10,
+      includeContents: true,
+      mode: "inline",
+      contentFormat: "json_records",
+      nodeIds: ["mt::revenue::abc123"],
+      strict: true,
+    });
+    expect(body).toEqual({
+      count: 10,
+      include_contents: true,
+      mode: "inline",
+      content_format: "json_records",
+      node_ids: ["mt::revenue::abc123"],
+      strict: true,
+    });
+    expect(check("DataSourceSettings", body).errors).toEqual([]);
+  });
+
+  it("omits absent options rather than sending nulls", () => {
+    expect(buildDataSourceSettings({})).toEqual({});
+    expect(check("DataSourceSettings", {}).errors).toEqual([]);
+  });
+
+  it("covers every property the schema defines", () => {
+    const body = buildDataSourceSettings({
+      count: 1, includeContents: true, mode: "inline",
+      contentFormat: "csv", nodeIds: ["a"], strict: true,
+    });
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("DataSourceSettings").sort());
+  });
+
+  // The one local guard. strict without node_ids can never match a card, so the
+  // request is guaranteed useless — and it is billed. Fail before the call.
+  it("rejects strict without nodeIds, and names the fix", () => {
+    expect(() => buildDataSourceSettings({ strict: true })).toThrow(
+      /strict requires a non-empty nodeIds/,
+    );
+    expect(() => buildDataSourceSettings({ strict: true, nodeIds: [] })).toThrow(
+      /strict requires a non-empty nodeIds/,
+    );
+  });
+
+  it("allows strict false with no nodeIds", () => {
+    expect(() => buildDataSourceSettings({ strict: false })).not.toThrow();
   });
 });
