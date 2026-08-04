@@ -92,4 +92,17 @@ describe("takoContents", () => {
       mode: "inline",
     });
   });
+
+  it("sends the new contents options on the wire", async () => {
+    const fetchMock = stubFetch(200, OK);
+    const t = takoContents({ apiKey: "key", mode: "inline", maxRows: 100, quoteOnly: true });
+    await runTool(t, { url: "https://tako.com/card/x" });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(init.body as string)).toEqual({
+      url: "https://tako.com/card/x",
+      mode: "inline",
+      max_rows: 100,
+      quote_only: true,
+    });
+  });
 });

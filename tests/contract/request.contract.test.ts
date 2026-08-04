@@ -102,10 +102,30 @@ describe("POST /v3/search — request body contract", () => {
 describe("POST /v1/contents — request body contract", () => {
   it("sends a spec-valid body in both delivery modes", () => {
     for (const mode of ["url", "inline"] as const) {
-      const body = buildContentsRequestBody("https://tako.com/card/abc123", mode);
+      const body = buildContentsRequestBody("https://tako.com/card/abc123", { mode });
       expect(check("ContentsRequest", body).errors).toEqual([]);
       expect(body.mode).toBe(mode);
     }
+  });
+
+  it("maps every documented contents option to its wire name", () => {
+    const body = buildContentsRequestBody("https://tako.com/card/abc123", {
+      mode: "inline",
+      contentFormat: "json_records",
+      maxRows: 100,
+      maxChars: 5000,
+      quoteOnly: true,
+    });
+    expect(body).toEqual({
+      url: "https://tako.com/card/abc123",
+      mode: "inline",
+      content_format: "json_records",
+      max_rows: 100,
+      max_chars: 5000,
+      quote_only: true,
+    });
+    expect(check("ContentsRequest", body).errors).toEqual([]);
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("ContentsRequest").sort());
   });
 
   it("emits only properties the schema defines", () => {
@@ -113,7 +133,7 @@ describe("POST /v1/contents — request body contract", () => {
     // catch an extra field here. Assert it directly instead, so this surface is
     // still gated the way the search surface is by the schema itself.
     const allowed = propertiesOf("ContentsRequest");
-    const body = buildContentsRequestBody("https://tako.com/card/abc123", "inline");
+    const body = buildContentsRequestBody("https://tako.com/card/abc123", { mode: "inline" });
     expect(Object.keys(body).filter((k) => !allowed.includes(k))).toEqual([]);
   });
 

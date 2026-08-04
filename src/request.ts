@@ -2,6 +2,7 @@ import type {
   TakoAnswerResponse,
   TakoAnswerResult,
   TakoContentFormat,
+  TakoContentsConfig,
   TakoContentsMode,
   TakoContentsResponse,
   TakoContentsResult,
@@ -158,11 +159,28 @@ export function buildSearchRequestBody(
 export interface ContentsRequestBody {
   url: string;
   mode: TakoContentsMode;
+  content_format?: TakoContentFormat;
+  max_rows?: number;
+  max_chars?: number;
+  quote_only?: boolean;
 }
 
-/** Map a url + delivery mode to the POST body the contents endpoint expects. */
-export function buildContentsRequestBody(url: string, mode: TakoContentsMode): ContentsRequestBody {
-  return { url, mode };
+/**
+ * Map a url + contents config to the POST body the contents endpoint expects.
+ *
+ * `mode` keeps its "url" default here because the tool's description changes with
+ * it, so the value must be resolved before the tool is built.
+ */
+export function buildContentsRequestBody(
+  url: string,
+  config: TakoContentsConfig,
+): ContentsRequestBody {
+  const body: ContentsRequestBody = { url, mode: config.mode ?? "url" };
+  if (config.contentFormat !== undefined) body.content_format = config.contentFormat;
+  if (config.maxRows !== undefined) body.max_rows = config.maxRows;
+  if (config.maxChars !== undefined) body.max_chars = config.maxChars;
+  if (config.quoteOnly !== undefined) body.quote_only = config.quoteOnly;
+  return body;
 }
 
 // ----- Response normalizers -----
