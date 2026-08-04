@@ -1,12 +1,18 @@
 import type {
   TakoAnswerResponse,
   TakoAnswerResult,
+  TakoContentFormat,
+  TakoContentsConfig,
   TakoContentsMode,
   TakoContentsResponse,
   TakoContentsResult,
+  TakoDataSourceOptions,
+  TakoGeoLocation,
   TakoRetrievalConfig,
   TakoSearchResponse,
   TakoSearchResult,
+  TakoWebCategory,
+  TakoWebSourceOptions,
 } from "./types";
 
 const DEFAULT_BASE_URL = "https://tako.com";
@@ -21,53 +27,159 @@ export function resolveBaseUrl(config: { baseUrl?: string }): string {
 
 export interface SearchRequestBody {
   query: string;
-  effort: string;
-  country_code: string;
-  locale: string;
-  sources?: {
-    data?: { count?: number; include_contents?: boolean };
-    web?: { count?: number; include_contents?: boolean };
-  };
+  effort?: string;
+  country_code?: string;
+  locale?: string;
+  sources?: { data?: DataSourceSettingsBody; web?: WebSourceSettingsBody };
+  location?: GeoLocationBody;
   timezone?: string;
-  output_settings?: { image_dark_mode?: boolean; force_refresh?: boolean };
+  output_settings?: OutputSettingsBody;
 }
 
-/** Map a retrieval config + query to the snake_case POST body the API expects. */
-export function buildSearchRequestBody(config: TakoRetrievalConfig, query: string): SearchRequestBody {
-  const body: SearchRequestBody = {
-    query,
-    effort: config.effort ?? "fast",
-    country_code: config.countryCode ?? "US",
-    locale: config.locale ?? "en-US",
-  };
+export interface WebSourceSettingsBody {
+  count?: number;
+  include_contents?: boolean;
+  category?: TakoWebCategory;
+  include_domains?: string[];
+  exclude_domains?: string[];
+  snippet_max_chars?: number;
+  article_content_max_chars?: number;
+  published_after?: string;
+  published_before?: string;
+}
+
+/**
+ * Map web source options to the API's `WebSourceSettings`.
+ *
+ * Numeric bounds are deliberately not checked here. The schema carries them and
+ * the API enforces them, so a limit raised by Tako needs no release of this SDK.
+ */
+export function buildWebSourceSettings(o: TakoWebSourceOptions): WebSourceSettingsBody {
+  const body: WebSourceSettingsBody = {};
+  if (o.count !== undefined) body.count = o.count;
+  if (o.includeContents !== undefined) body.include_contents = o.includeContents;
+  if (o.category !== undefined) body.category = o.category;
+  if (o.includeDomains !== undefined) body.include_domains = o.includeDomains;
+  if (o.excludeDomains !== undefined) body.exclude_domains = o.excludeDomains;
+  if (o.snippetMaxChars !== undefined) body.snippet_max_chars = o.snippetMaxChars;
+  if (o.articleContentMaxChars !== undefined) {
+    body.article_content_max_chars = o.articleContentMaxChars;
+  }
+  if (o.publishedAfter !== undefined) body.published_after = o.publishedAfter;
+  if (o.publishedBefore !== undefined) body.published_before = o.publishedBefore;
+  return body;
+}
+
+export interface DataSourceSettingsBody {
+  count?: number;
+  include_contents?: boolean;
+  mode?: TakoContentsMode;
+  content_format?: TakoContentFormat;
+  node_ids?: string[];
+  strict?: boolean;
+}
+
+/**
+ * Throw when data source options contradict themselves.
+ *
+ * This is the only local validation in this file. It is a logical invariant of
+ * the API, not a numeric limit: strict mode matches against `node_ids`, so an
+ * empty list can never match a card. Numeric bounds stay unchecked so the API
+ * remains the authority.
+ *
+ * `takoSearch` and `takoAnswer` call this when the tool is built, so a developer
+ * sees the error at wiring time. Reaching it from `execute` instead would hand
+ * the message to the model, which can neither supply node ids nor edit the
+ * config, and which would retry until the step limit.
+ */
+export function assertValidDataSourceOptions(o: TakoDataSourceOptions): void {
+  if (o.strict && !o.nodeIds?.length) {
+    throw new Error(
+      "strict requires a non-empty nodeIds. Add node ids from the /v1/graph endpoints, or set strict to false.",
+    );
+  }
+}
+
+/**
+ * Assert the invariants of whichever data source a retrieval config carries.
+ *
+ * Call this when a tool is built. `sources.tako` is the deprecated alias for
+ * `sources.data`, so both routes must be checked.
+ */
+export function assertValidRetrievalConfig(config: TakoRetrievalConfig): void {
+  const dataSource = config.sources?.data ?? config.sources?.tako;
+  if (dataSource) assertValidDataSourceOptions(dataSource);
+}
+
+/** Map data source options to the API's `DataSourceSettings`. */
+export function buildDataSourceSettings(o: TakoDataSourceOptions): DataSourceSettingsBody {
+  assertValidDataSourceOptions(o);
+  const body: DataSourceSettingsBody = {};
+  if (o.count !== undefined) body.count = o.count;
+  if (o.includeContents !== undefined) body.include_contents = o.includeContents;
+  if (o.mode !== undefined) body.mode = o.mode;
+  if (o.contentFormat !== undefined) body.content_format = o.contentFormat;
+  if (o.nodeIds !== undefined) body.node_ids = o.nodeIds;
+  if (o.strict !== undefined) body.strict = o.strict;
+  return body;
+}
+
+export interface GeoLocationBody {
+  latitude: number;
+  longitude: number;
+}
+
+/** Map end-user coordinates to the API's `GeoLocation`. Both keys are required. */
+export function buildGeoLocation(o: TakoGeoLocation): GeoLocationBody {
+  return { latitude: o.latitude, longitude: o.longitude };
+}
+
+export interface OutputSettingsBody {
+  image_dark_mode?: boolean;
+  force_refresh?: boolean;
+}
+
+/** Map output options to the API's `OutputSettings`. */
+export function buildOutputSettings(
+  o: NonNullable<TakoRetrievalConfig["outputSettings"]>,
+): OutputSettingsBody {
+  const body: OutputSettingsBody = {};
+  if (o.imageDarkMode !== undefined) body.image_dark_mode = o.imageDarkMode;
+  if (o.forceRefresh !== undefined) body.force_refresh = o.forceRefresh;
+  return body;
+}
+
+/**
+ * Map a retrieval config + query to the snake_case POST body the API expects.
+ *
+ * Only `query` is sent unconditionally, because only `query` is required. Every
+ * other key appears when the caller sets it. Earlier versions sent `effort`,
+ * `country_code` and `locale` with the values "fast", "US" and "en-US" — the
+ * server defaults, restated here. That made a default Tako changes server-side
+ * need a release of this SDK, which is the rot the section above avoids.
+ */
+export function buildSearchRequestBody(
+  config: TakoRetrievalConfig,
+  query: string,
+): SearchRequestBody {
+  const body: SearchRequestBody = { query };
+
+  if (config.effort !== undefined) body.effort = config.effort;
+  if (config.countryCode !== undefined) body.country_code = config.countryCode;
+  if (config.locale !== undefined) body.locale = config.locale;
 
   if (config.sources) {
     const sources: NonNullable<SearchRequestBody["sources"]> = {};
     // `data` is the curated Tako source; `tako` is the deprecated legacy alias.
     const dataSource = config.sources.data ?? config.sources.tako;
-    if (dataSource) {
-      const data: NonNullable<NonNullable<SearchRequestBody["sources"]>["data"]> = {};
-      if (dataSource.count !== undefined) data.count = dataSource.count;
-      if (dataSource.includeContents !== undefined) data.include_contents = dataSource.includeContents;
-      sources.data = data;
-    }
-    if (config.sources.web) {
-      const web: NonNullable<NonNullable<SearchRequestBody["sources"]>["web"]> = {};
-      if (config.sources.web.count !== undefined) web.count = config.sources.web.count;
-      if (config.sources.web.includeContents !== undefined) web.include_contents = config.sources.web.includeContents;
-      sources.web = web;
-    }
+    if (dataSource) sources.data = buildDataSourceSettings(dataSource);
+    if (config.sources.web) sources.web = buildWebSourceSettings(config.sources.web);
     body.sources = sources;
   }
 
+  if (config.location !== undefined) body.location = buildGeoLocation(config.location);
   if (config.timezone !== undefined) body.timezone = config.timezone;
-
-  if (config.outputSettings) {
-    const output: NonNullable<SearchRequestBody["output_settings"]> = {};
-    if (config.outputSettings.imageDarkMode !== undefined) output.image_dark_mode = config.outputSettings.imageDarkMode;
-    if (config.outputSettings.forceRefresh !== undefined) output.force_refresh = config.outputSettings.forceRefresh;
-    body.output_settings = output;
-  }
+  if (config.outputSettings) body.output_settings = buildOutputSettings(config.outputSettings);
 
   return body;
 }
@@ -75,11 +187,28 @@ export function buildSearchRequestBody(config: TakoRetrievalConfig, query: strin
 export interface ContentsRequestBody {
   url: string;
   mode: TakoContentsMode;
+  content_format?: TakoContentFormat;
+  max_rows?: number;
+  max_chars?: number;
+  quote_only?: boolean;
 }
 
-/** Map a url + delivery mode to the POST body the contents endpoint expects. */
-export function buildContentsRequestBody(url: string, mode: TakoContentsMode): ContentsRequestBody {
-  return { url, mode };
+/**
+ * Map a url + contents config to the POST body the contents endpoint expects.
+ *
+ * `mode` defaults to "url" here. The tool builder resolves the same default
+ * separately, to pick the description text the model reads.
+ */
+export function buildContentsRequestBody(
+  url: string,
+  config: TakoContentsConfig,
+): ContentsRequestBody {
+  const body: ContentsRequestBody = { url, mode: config.mode ?? "url" };
+  if (config.contentFormat !== undefined) body.content_format = config.contentFormat;
+  if (config.maxRows !== undefined) body.max_rows = config.maxRows;
+  if (config.maxChars !== undefined) body.max_chars = config.maxChars;
+  if (config.quoteOnly !== undefined) body.quote_only = config.quoteOnly;
+  return body;
 }
 
 // ----- Response normalizers -----

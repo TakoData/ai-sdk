@@ -24,6 +24,9 @@ export type TakoKnowledgeCardRelevance = "High" | "Medium" | "Low";
 export type TakoGraphNodeType = "metric" | "entity";
 export type TakoDatasetColumnType = "string" | "number" | "boolean" | "date" | "datetime";
 
+/** Web result category. Only "news" filters today; the others are accepted and inert. */
+export type TakoWebCategory = "news" | "sports" | "finance";
+
 // ----- Config (developer-facing, camelCase) -----
 
 export interface TakoBaseConfig {
@@ -34,19 +37,77 @@ export interface TakoBaseConfig {
 }
 
 export interface TakoSourceOptions {
-  /** Max results for this source, 1–20 (server default 5). */
+  /**
+   * Max results for this source, 1-20.
+   *
+   * The server default differs by tool: `takoSearch` returns 5, `takoAnswer`
+   * returns 3. Set this value when you need the same count from both.
+   */
   count?: number;
   /** Inline this source's underlying data in the response. */
   includeContents?: boolean;
 }
 
-/**
- * Options for the curated Tako data source.
- *
- * The API's `DataSourceSettings` also carries `mode`, `content_format`,
- * `node_ids` and `strict`; those are not surfaced yet.
- */
-export interface TakoCardSourceOptions extends TakoSourceOptions {}
+/** Options for the curated Tako data source. Mirrors the API's `DataSourceSettings`. */
+export interface TakoDataSourceOptions extends TakoSourceOptions {
+  /**
+   * Delivery for card data inlined by this search.
+   *
+   * The API documents this field as having no effect on Tako cards, which always
+   * return a small inline preview. It stays for schema stability. This is a
+   * different field from {@link TakoContentsConfig.mode}, which does control
+   * delivery for an explicit contents call.
+   */
+  mode?: TakoContentsMode;
+  /** Serialization for inlined card data. Server default "json_compact". */
+  contentFormat?: TakoContentFormat;
+  /**
+   * Graph node ids to pin into the search. Get ids from the /v1/graph endpoints,
+   * which this SDK does not wrap. Ids do not survive a knowledge-graph rebuild:
+   * resolve them per request rather than storing them.
+   */
+  nodeIds?: string[];
+  /** Return only cards that match a pinned node. Requires a non-empty `nodeIds`. */
+  strict?: boolean;
+}
+
+/** Options for the web source. Mirrors the API's `WebSourceSettings`. */
+export interface TakoWebSourceOptions extends TakoSourceOptions {
+  /** Restrict web results to a category. */
+  category?: TakoWebCategory;
+  /** Return only results from these bare hosts, for example "cnn.com". */
+  includeDomains?: string[];
+  /** Drop results from these bare hosts. */
+  excludeDomains?: string[];
+  /** Character cap on the excerpt per web result. Server default 1000. */
+  snippetMaxChars?: number;
+  /** Character cap on full article text when `includeContents` is true. Server default 30000. */
+  articleContentMaxChars?: number;
+  /**
+   * Keep results published on or after this ISO date, "YYYY-MM-DD".
+   *
+   * This is not a recency guarantee. The API keeps a result whose publication
+   * date it does not know, so undated pages still arrive.
+   */
+  publishedAfter?: string;
+  /**
+   * Keep results published on or before this ISO date, "YYYY-MM-DD".
+   *
+   * The API keeps a result whose publication date it does not know.
+   */
+  publishedBefore?: string;
+}
+
+/** @deprecated Renamed to {@link TakoDataSourceOptions}. */
+export type TakoCardSourceOptions = TakoDataSourceOptions;
+
+/** End-user coordinates used to localize results. */
+export interface TakoGeoLocation {
+  /** Degrees, -90 to 90. */
+  latitude: number;
+  /** Degrees, -180 to 180. */
+  longitude: number;
+}
 
 export interface TakoRetrievalConfig extends TakoBaseConfig {
   /** "fast" (default) | "instant" | "deep". */
@@ -54,11 +115,13 @@ export interface TakoRetrievalConfig extends TakoBaseConfig {
   /** Per-source settings. A source is searched iff its key is present. Omit to search data + web. */
   sources?: {
     /** The curated Tako data source. */
-    data?: TakoCardSourceOptions;
-    web?: TakoSourceOptions;
+    data?: TakoDataSourceOptions;
+    web?: TakoWebSourceOptions;
     /** @deprecated Use `data`. Legacy alias for the curated Tako source. */
-    tako?: TakoCardSourceOptions;
+    tako?: TakoDataSourceOptions;
   };
+  /** End-user coordinates. Use with `countryCode` for location-sensitive queries. */
+  location?: TakoGeoLocation;
   /** ISO 3166-1 alpha-2 country code. Default "US". */
   countryCode?: string;
   /** BCP-47 locale tag. Default "en-US". */
@@ -75,6 +138,22 @@ export interface TakoRetrievalConfig extends TakoBaseConfig {
 export interface TakoContentsConfig extends TakoBaseConfig {
   /** "url" (default) returns a presigned link; "inline" returns content in the body. */
   mode?: TakoContentsMode;
+  /** Serialization for card data. Server default "csv" on this surface. */
+  contentFormat?: TakoContentFormat;
+  /**
+   * Cap on rows returned for a card export. The server default is the 20-row free
+   * allowance. Rows above that allowance bill at the per-1000-row rate, so raise
+   * this only when you need the extra rows. Web urls ignore this field.
+   */
+  maxRows?: number;
+  /** Character cap on extracted web page text. Server default 1000000, the full page text. Card urls ignore this field. */
+  maxChars?: number;
+  /**
+   * Return only the price of the export, without the content. The request is free
+   * and the item's payload and url are null. The server ignores `mode` and
+   * `contentFormat`.
+   */
+  quoteOnly?: boolean;
 }
 
 // ----- Usage / billing -----

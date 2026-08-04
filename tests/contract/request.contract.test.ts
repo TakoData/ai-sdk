@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { buildContentsRequestBody, buildSearchRequestBody } from "../../src/request";
-import { check, propertiesOf, spec } from "./spec";
+import {
+  buildContentsRequestBody,
+  buildDataSourceSettings,
+  buildGeoLocation,
+  buildOutputSettings,
+  buildSearchRequestBody,
+  buildWebSourceSettings,
+} from "../../src/request";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { check, enumOf, propertiesOf, spec } from "./spec";
 
 /**
  * Request-side contract: every body this SDK sends must validate against Tako's
@@ -96,10 +105,30 @@ describe("POST /v3/search — request body contract", () => {
 describe("POST /v1/contents — request body contract", () => {
   it("sends a spec-valid body in both delivery modes", () => {
     for (const mode of ["url", "inline"] as const) {
-      const body = buildContentsRequestBody("https://tako.com/card/abc123", mode);
+      const body = buildContentsRequestBody("https://tako.com/card/abc123", { mode });
       expect(check("ContentsRequest", body).errors).toEqual([]);
       expect(body.mode).toBe(mode);
     }
+  });
+
+  it("maps every documented contents option to its wire name", () => {
+    const body = buildContentsRequestBody("https://tako.com/card/abc123", {
+      mode: "inline",
+      contentFormat: "json_records",
+      maxRows: 100,
+      maxChars: 5000,
+      quoteOnly: true,
+    });
+    expect(body).toEqual({
+      url: "https://tako.com/card/abc123",
+      mode: "inline",
+      content_format: "json_records",
+      max_rows: 100,
+      max_chars: 5000,
+      quote_only: true,
+    });
+    expect(check("ContentsRequest", body).errors).toEqual([]);
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("ContentsRequest").sort());
   });
 
   it("emits only properties the schema defines", () => {
@@ -107,7 +136,7 @@ describe("POST /v1/contents — request body contract", () => {
     // catch an extra field here. Assert it directly instead, so this surface is
     // still gated the way the search surface is by the schema itself.
     const allowed = propertiesOf("ContentsRequest");
-    const body = buildContentsRequestBody("https://tako.com/card/abc123", "inline");
+    const body = buildContentsRequestBody("https://tako.com/card/abc123", { mode: "inline" });
     expect(Object.keys(body).filter((k) => !allowed.includes(k))).toEqual([]);
   });
 
@@ -128,4 +157,224 @@ describe("POST /v1/contents — request body contract", () => {
     }
     expect(forbidsExtras("ContentsRequest")).toBe(false);
   });
+});
+
+describe("WebSourceSettings — section contract", () => {
+  it("maps every documented option to its wire name", () => {
+    const body = buildWebSourceSettings({
+      count: 3,
+      includeContents: true,
+      category: "news",
+      includeDomains: ["sec.gov"],
+      excludeDomains: ["example.com"],
+      snippetMaxChars: 500,
+      articleContentMaxChars: 20000,
+      publishedAfter: "2026-01-01",
+      publishedBefore: "2026-08-01",
+    });
+    expect(body).toEqual({
+      count: 3,
+      include_contents: true,
+      category: "news",
+      include_domains: ["sec.gov"],
+      exclude_domains: ["example.com"],
+      snippet_max_chars: 500,
+      article_content_max_chars: 20000,
+      published_after: "2026-01-01",
+      published_before: "2026-08-01",
+    });
+    expect(check("WebSourceSettings", body).errors).toEqual([]);
+  });
+
+  it("omits absent options rather than sending nulls", () => {
+    // The schema forbids unknown properties and applies its own defaults, so an
+    // unset option must not appear at all.
+    expect(buildWebSourceSettings({})).toEqual({});
+    expect(check("WebSourceSettings", {}).errors).toEqual([]);
+  });
+
+  it("covers every property the schema defines", () => {
+    // Fails when Tako adds a web option, which is the signal to expose it.
+    const body = buildWebSourceSettings({
+      count: 1, includeContents: true, category: "news",
+      includeDomains: [], excludeDomains: [], snippetMaxChars: 1,
+      articleContentMaxChars: 1, publishedAfter: "2026-01-01",
+      publishedBefore: "2026-01-02",
+    });
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("WebSourceSettings").sort());
+  });
+});
+
+describe("DataSourceSettings — section contract", () => {
+  it("maps every documented option to its wire name", () => {
+    const body = buildDataSourceSettings({
+      count: 10,
+      includeContents: true,
+      mode: "inline",
+      contentFormat: "json_records",
+      nodeIds: ["mt::revenue::abc123"],
+      strict: true,
+    });
+    expect(body).toEqual({
+      count: 10,
+      include_contents: true,
+      mode: "inline",
+      content_format: "json_records",
+      node_ids: ["mt::revenue::abc123"],
+      strict: true,
+    });
+    expect(check("DataSourceSettings", body).errors).toEqual([]);
+  });
+
+  it("omits absent options rather than sending nulls", () => {
+    expect(buildDataSourceSettings({})).toEqual({});
+    expect(check("DataSourceSettings", {}).errors).toEqual([]);
+  });
+
+  it("covers every property the schema defines", () => {
+    const body = buildDataSourceSettings({
+      count: 1, includeContents: true, mode: "inline",
+      contentFormat: "csv", nodeIds: ["a"], strict: true,
+    });
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("DataSourceSettings").sort());
+  });
+
+  // The one local guard. strict without node_ids can never match a card, so the
+  // request is guaranteed useless — and it is billed. Fail before the call.
+  it("rejects strict without nodeIds, and names the fix", () => {
+    expect(() => buildDataSourceSettings({ strict: true })).toThrow(
+      /strict requires a non-empty nodeIds/,
+    );
+    expect(() => buildDataSourceSettings({ strict: true, nodeIds: [] })).toThrow(
+      /strict requires a non-empty nodeIds/,
+    );
+  });
+
+  it("allows strict false with no nodeIds", () => {
+    expect(() => buildDataSourceSettings({ strict: false })).not.toThrow();
+  });
+});
+
+describe("GeoLocation — section contract", () => {
+  it("maps coordinates and validates against the schema", () => {
+    const body = buildGeoLocation({ latitude: 37.77, longitude: -122.42 });
+    expect(body).toEqual({ latitude: 37.77, longitude: -122.42 });
+    expect(check("GeoLocation", body).errors).toEqual([]);
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("GeoLocation").sort());
+  });
+});
+
+describe("OutputSettings — section contract", () => {
+  it("maps every documented option and covers every property the schema defines", () => {
+    // Fails when Tako adds an output option, which is the signal to expose it.
+    const body = buildOutputSettings({ imageDarkMode: true, forceRefresh: false });
+    expect(body).toEqual({ image_dark_mode: true, force_refresh: false });
+    expect(check("OutputSettings", body).errors).toEqual([]);
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("OutputSettings").sort());
+  });
+});
+
+describe("Sources — section contract", () => {
+  it("covers every property the schema defines", () => {
+    // Fails when Tako adds a third source key, which is the signal to expose it.
+    const body = buildSearchRequestBody(
+      { sources: { data: { count: 1 }, web: { count: 1 } } },
+      "q",
+    );
+    expect(check("SearchRequest", body).errors).toEqual([]);
+    expect(Object.keys(body.sources!).sort()).toEqual(propertiesOf("Sources").sort());
+  });
+});
+
+describe("SearchRequest — every documented option", () => {
+  it("builds a spec-valid body with all 12 search-side options set", () => {
+    const body = buildSearchRequestBody(
+      {
+        effort: "deep",
+        countryCode: "GB",
+        locale: "en-GB",
+        timezone: "Europe/London",
+        location: { latitude: 51.5, longitude: -0.12 },
+        sources: {
+          data: {
+            count: 10, includeContents: true, mode: "inline",
+            contentFormat: "json_compact", nodeIds: ["mt::revenue::abc"], strict: true,
+          },
+          web: {
+            count: 3, includeContents: true, category: "news",
+            includeDomains: ["sec.gov"], excludeDomains: ["example.com"],
+            snippetMaxChars: 500, articleContentMaxChars: 20000,
+            publishedAfter: "2026-01-01", publishedBefore: "2026-08-01",
+          },
+        },
+        outputSettings: { imageDarkMode: true, forceRefresh: false },
+      },
+      "q",
+    );
+    expect(check("SearchRequest", body).errors).toEqual([]);
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("SearchRequest").sort());
+  });
+
+  it("routes the deprecated tako alias through the data builder", () => {
+    const body = buildSearchRequestBody(
+      { sources: { tako: { contentFormat: "csv", nodeIds: ["a"], strict: true } } },
+      "q",
+    );
+    expect(body.sources?.data?.content_format).toBe("csv");
+    expect(body.sources?.data?.strict).toBe(true);
+    expect(check("SearchRequest", body).errors).toEqual([]);
+  });
+});
+
+/**
+ * Request-side enums, pinned against the vendored spec.
+ *
+ * `types.conformance.ts` already gates these three against `tako-sdk`. That
+ * catches drift from the generated client, but the two references move
+ * independently: a `pnpm spec:refresh` that adds a fourth effort level would pass
+ * CI until somebody separately bumped `tako-sdk`, so the two halves of the gate
+ * could disagree about which enum is current. `response.contract.test.ts` pins
+ * the response-side enums the same way.
+ */
+describe("request-side enums — pinned to the vendored spec", () => {
+  it("SearchEffortLevel is fast | instant | deep", () => {
+    expect(enumOf("SearchEffortLevel")).toEqual(["fast", "instant", "deep"]);
+  });
+
+  it("ContentsDeliveryMode is url | inline", () => {
+    expect(enumOf("ContentsDeliveryMode")).toEqual(["url", "inline"]);
+  });
+
+  it("WebCategory is news | sports | finance", () => {
+    expect(enumOf("WebCategory")).toEqual(["news", "sports", "finance"]);
+  });
+});
+
+/**
+ * The no-mirrored-bounds policy, enforced rather than asserted in a comment.
+ *
+ * Copying a server limit into this package is what made 3.0.0 necessary: the
+ * "capped at 1000 rows" claim went stale because a number lived where it could
+ * rot. The spec carries real bounds — `maxItems: 20` on the domain arrays, 1-20
+ * on counts, a 2000-row ceiling — and none of them may appear as code in the two
+ * files that map the options.
+ */
+describe("no server-side bound is mirrored in the request mapping", () => {
+  const sourceOf = (name: string) =>
+    readFileSync(fileURLToPath(new URL(`../../src/${name}`, import.meta.url)), "utf8")
+      // Strip block and line comments: the bounds are documented in prose on
+      // purpose, and only executable code is a drift hazard.
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/[^\n]*/g, "");
+
+  for (const name of ["request.ts", "types.ts"]) {
+    it(`${name} contains no numeric range check`, () => {
+      const code = sourceOf(name);
+      expect(code).not.toMatch(/\.min\(/);
+      expect(code).not.toMatch(/\.max\(/);
+      expect(code).not.toMatch(/maxItems/);
+      expect(code).not.toMatch(/\b2000\b/);
+      expect(code).not.toMatch(/Math\.(min|max)/);
+    });
+  }
 });

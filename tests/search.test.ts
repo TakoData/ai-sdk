@@ -14,12 +14,9 @@ describe("takoSearch", () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("https://tako.com/api/v3/search");
     expect((init.headers as Record<string, string>)["X-API-Key"]).toBe("key");
-    expect(JSON.parse(init.body as string)).toEqual({
-      query: "nvidia revenue",
-      effort: "fast",
-      country_code: "US",
-      locale: "en-US",
-    });
+    // Only `query` is sent. The three server defaults this SDK used to restate
+    // are gone, so Tako applies its own.
+    expect(JSON.parse(init.body as string)).toEqual({ query: "nvidia revenue" });
     expect((res as any).request_id).toBe("r");
   });
 
@@ -37,8 +34,6 @@ describe("takoSearch", () => {
     expect(JSON.parse(init.body as string)).toEqual({
       query: "x",
       effort: "deep",
-      country_code: "US",
-      locale: "en-US",
       sources: { data: { count: 10, include_contents: true } },
       timezone: "America/New_York",
       output_settings: { image_dark_mode: true },
@@ -88,6 +83,47 @@ describe("takoSearch", () => {
     const t = takoSearch({ apiKey: "key", baseUrl: "https://e.com/" });
     await runTool(t, { query: "x" });
     expect(fetchMock.mock.calls[0][0]).toBe("https://e.com/api/v3/search");
+  });
+
+  it("sends the new web filters on the wire", async () => {
+    const fetchMock = stubFetch(200, OK);
+    const t = takoSearch({
+      apiKey: "key",
+      sources: { web: { includeDomains: ["sec.gov"], publishedAfter: "2026-01-01" } },
+    });
+    await runTool(t, { query: "x" });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(body.sources.web.include_domains).toEqual(["sec.gov"]);
+    expect(body.sources.web.published_after).toBe("2026-01-01");
+  });
+
+  // Constructing the tool must throw, not calling it. An `execute` error goes to
+  // the model, which can neither supply node ids nor edit the config, so it would
+  // retry the same contradiction until the step limit.
+  it("throws when strict has no nodeIds, at construction and before any fetch", () => {
+    const fetchMock = stubFetch(200, OK);
+    expect(() => takoSearch({ apiKey: "key", sources: { data: { strict: true } } })).toThrow(
+      /strict requires a non-empty nodeIds/,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("throws at construction through the deprecated tako alias too", () => {
+    expect(() => takoSearch({ apiKey: "key", sources: { tako: { strict: true } } })).toThrow(
+      /strict requires a non-empty nodeIds/,
+    );
+  });
+
+  it("builds normally when strict comes with nodeIds", async () => {
+    const fetchMock = stubFetch(200, OK);
+    const t = takoSearch({ apiKey: "key", sources: { data: { strict: true, nodeIds: ["mt::a::b"] } } });
+    await runTool(t, { query: "x" });
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(init.body as string).sources.data).toEqual({
+      strict: true,
+      node_ids: ["mt::a::b"],
+    });
   });
 
   it("falls back to TAKO_API_KEY env and throws clearly when unset", async () => {

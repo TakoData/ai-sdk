@@ -28,11 +28,19 @@ export function takoContents(
       "rows; any other url (a web result's) yields the page's full extracted text. Only " +
       "call this on a url returned by a prior search or answer call, which gives you a " +
       "caption and a chart but not the rows.\n\n" +
-      (mode === "inline"
-        ? "Returns the content in the response body — read and compute over the numbers " +
-          "directly.\n\n"
-        : "Returns a short-lived presigned download url, NOT the data itself: surface the " +
-          "link, do not parse it or call again expecting rows.\n\n") +
+      // `quoteOnly` outranks `mode`: the API ignores mode on a quote and returns
+      // null for url and every payload field. Describing either delivery here
+      // would promise content that never arrives, and the model's cheapest
+      // recovery from an unexplained null is to call again.
+      (config.quoteOnly
+        ? "Configured for price quotes only: returns the export cost and rate card, and NO " +
+          "content. The url and data fields are always null and the call is free — report " +
+          "the price, and do not call again expecting rows.\n\n"
+        : mode === "inline"
+          ? "Returns the content in the response body — read and compute over the numbers " +
+            "directly.\n\n"
+          : "Returns a short-lived presigned download url, NOT the data itself: surface the " +
+            "link, do not parse it or call again expecting rows.\n\n") +
       "Only cards whose exportable field is true can be downloaded; a non-exportable card " +
       "always returns 403 and retrying will not change that — get its figures from the " +
       "answer tool instead, naming the period you need. Web urls always work, so this is " +
@@ -54,7 +62,7 @@ export function takoContents(
           baseUrl: resolveBaseUrl(config),
           path: "/api/v1/contents",
           apiKey: resolveApiKey(config),
-          body: buildContentsRequestBody(url, mode),
+          body: buildContentsRequestBody(url, config),
           operation: "fetch contents",
         }),
       ),

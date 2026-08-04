@@ -8,6 +8,8 @@ pnpm test          # vitest (mocked fetch — no live API calls)
 pnpm test:contract # just tests/contract — the API contract suite
 pnpm typecheck     # tsc over src + tests + examples
 pnpm build         # tsup → dist/
+pnpm lint:package  # publint + are-the-types-wrong, against the packed tarball
+pnpm test:package  # install the tarball in a scratch project and use it
 pnpm spec:refresh  # re-vendor tests/contract/openapi.yaml from docs.tako.com
 ```
 
@@ -15,6 +17,36 @@ pnpm spec:refresh  # re-vendor tests/contract/openapi.yaml from docs.tako.com
 to a cold `tsc` run, so expect it to take a second or two — much longer than the
 rest of the suite. It is the slowest test and the one that fails if `src/types.ts`
 drifts from the API.
+
+## Testing what consumers actually install
+
+`pnpm test` imports from `src/`, so it cannot see a fault that exists only in the
+published artifact: a file missing from `files`, an `exports` map a real resolver
+rejects, a devDependency imported at run time, or a peer dependency the package
+needs but does not declare. **You do not need to publish to find these.**
+`npm pack` produces the same tarball `npm publish` uploads, and an npm version
+cannot be republished — so a fault caught before publish costs nothing and the
+same fault caught after costs a version.
+
+- `pnpm lint:package` runs `publint` and `are-the-types-wrong` over the packed
+  tarball. Both run through `npx` rather than as devDependencies, so this adds
+  nothing to the lockfile. `publint` is pinned to `--pack npm` because `npm` ships
+  with node and the result is then the same everywhere.
+  `are-the-types-wrong` ignores `cjs-resolves-to-esm`: this package is ESM-only on
+  purpose, so a CommonJS consumer using `await import()` is the intended contract,
+  not a defect.
+- `pnpm test:package` (`scripts/verify-package.mjs`) packs, installs the tarball
+  into a scratch project with the peer dependencies a consumer would install,
+  imports the package, builds all three tools, and type-checks a snippet against
+  the shipped `.d.ts` under `nodenext` resolution — the mode that actually reads
+  the `exports` map.
+
+Both run in `ci.yml` and again in the publish job, ahead of `pnpm publish`.
+
+The type check sets `skipLibCheck: true` on purpose. With it false, `tsc` audits
+every `.d.ts` under `node_modules`, and the `ai` package's own tree reports
+missing `@types/node` and `@types/json-schema` — another package's noise, loud
+enough to hide a real failure here.
 
 ## Keeping the API contract honest
 

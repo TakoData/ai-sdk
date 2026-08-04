@@ -2,6 +2,7 @@ import { tool, type Tool } from "ai";
 import { z } from "zod";
 import { callTako } from "../client";
 import {
+  assertValidRetrievalConfig,
   buildSearchRequestBody,
   normalizeSearchResult,
   resolveApiKey,
@@ -13,6 +14,9 @@ import type { TakoRetrievalConfig, TakoSearchResponse, TakoSearchResult } from "
 export function takoSearch(
   config: TakoRetrievalConfig = {},
 ): Tool<{ query: string }, TakoSearchResult> {
+  // Fail here, not in `execute`. A contradictory config is a wiring mistake, and
+  // the model that reads an `execute` error cannot fix one.
+  assertValidRetrievalConfig(config);
   return tool({
     description:
       "Search Tako for live data and well-sourced facts — knowledge cards (charts and " +

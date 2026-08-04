@@ -15,11 +15,14 @@ describe("takoAnswer", () => {
     expect(url).toBe("https://tako.com/api/v1/answer");
     expect(JSON.parse(init.body as string)).toEqual({
       query: "did AMD or Nvidia grow headcount faster?",
-      effort: "fast",
-      country_code: "US",
-      locale: "en-US",
     });
     expect((res as any).answer).toBe("AMD grew faster.");
+  });
+
+  it("throws at construction when strict has no nodeIds", () => {
+    expect(() => takoAnswer({ apiKey: "key", sources: { data: { strict: true } } })).toThrow(
+      /strict requires a non-empty nodeIds/,
+    );
   });
 
   it("normalizes absent collections to empty arrays", async () => {
