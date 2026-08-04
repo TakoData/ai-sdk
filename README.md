@@ -131,7 +131,7 @@ Both tools take the same config. Every field is optional; omit one and the API's
 | `contentFormat` | `"csv" \| "json_records" \| "json_compact"` | Server default `"csv"` on this surface. |
 | `maxRows` | `number` | Card exports only. The first 20 rows are free; **rows above that bill at the per-1000-row rate**. |
 | `maxChars` | `number` | Web page text only. Server default 1000000, the full page text. |
-| `quoteOnly` | `boolean` | Price the export without fetching it. The request is free and the payload is null. |
+| `quoteOnly` | `boolean` | Price the export without fetching it. `url` and the payload come back null. **`cost` is the quoted price, not a charge** — the quote itself is not billed, and the figure scales with `maxRows`. |
 
 This SDK does not check the numeric ranges. The API enforces them, so a limit Tako raises works immediately without an SDK release. Most out-of-range values return a 400.
 

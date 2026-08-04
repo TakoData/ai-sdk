@@ -118,7 +118,7 @@ The defaults differ by surface: `json_compact` on `sources.data`, `csv` on `tako
 **Three options carry consequences worth reading before you set them.**
 
 - **`maxRows`** — the fix for the 1000-row documentation error above. The first 20 rows are free; rows beyond that bill at the per-1,000-row rate. A value over the 2,000-row ceiling is **clamped, not rejected**, and you are billed for what comes back — so an over-large value yields a short export, a charge, and no error. Check `total_rows` and `truncated`.
-- **`quoteOnly`** — prices an export without fetching or charging. Use it to find the cost before committing. The item's `url` and payload come back null, and the API ignores `mode` and `contentFormat` on a quote.
+- **`quoteOnly`** — prices an export without fetching or charging. Use it to find the cost before committing. The item's `url` and payload come back null, and the API ignores `mode` and `contentFormat` on a quote. **Read `cost` as the quoted price, not a charge**: a quote returns a non-zero `cost` while billing you nothing, and the figure scales with `maxRows`, so you can size an export before paying for it.
 - **`strict`** — returns only cards matching a pinned node, so it requires a non-empty `nodeIds`. Setting one without the other throws from `takoSearch()`/`takoAnswer()` at construction rather than failing the request. Node ids come from the `/v1/graph` endpoints, which this SDK does not wrap.
 
 **One option is accepted but inert.** `sources.data.mode` is in the API's schema and the API documents it as having no effect on Tako cards. It is exposed for completeness; setting it changes nothing.
