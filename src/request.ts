@@ -168,8 +168,8 @@ export interface ContentsRequestBody {
 /**
  * Map a url + contents config to the POST body the contents endpoint expects.
  *
- * `mode` keeps its "url" default here because the tool's description changes with
- * it, so the value must be resolved before the tool is built.
+ * `mode` defaults to "url" here. The tool builder resolves the same default
+ * separately, to pick the description text the model reads.
  */
 export function buildContentsRequestBody(
   url: string,

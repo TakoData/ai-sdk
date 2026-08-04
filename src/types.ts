@@ -132,11 +132,12 @@ export interface TakoContentsConfig extends TakoBaseConfig {
    * this only when you need the extra rows. Web urls ignore this field.
    */
   maxRows?: number;
-  /** Character cap on extracted web page text. Card urls ignore this field. */
+  /** Character cap on extracted web page text. Server default 1000000, the full page text. Card urls ignore this field. */
   maxChars?: number;
   /**
    * Return only the price of the export, without the content. The request is free
-   * and the item's payload and url are null. The server ignores `mode`.
+   * and the item's payload and url are null. The server ignores `mode` and
+   * `contentFormat`.
    */
   quoteOnly?: boolean;
 }

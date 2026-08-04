@@ -54,7 +54,7 @@ export function takoContents(
           baseUrl: resolveBaseUrl(config),
           path: "/api/v1/contents",
           apiKey: resolveApiKey(config),
-          body: buildContentsRequestBody(url, { ...config, mode }),
+          body: buildContentsRequestBody(url, config),
           operation: "fetch contents",
         }),
       ),

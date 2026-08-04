@@ -109,13 +109,13 @@ Both tools take the same config. Every field is optional; omit one and the API's
 | `contentFormat` | `"csv" \| "json_records" \| "json_compact"` | Server default `"json_compact"`. |
 | `nodeIds` | `string[]` | Pin graph nodes. Ids come from the `/v1/graph` endpoints. |
 | `strict` | `boolean` | Return only cards matching a pinned node. Requires `nodeIds`. |
-| `mode` | `"url" \| "inline"` | Accepted, but the API documents no effect on Tako cards. |
+| `mode` | `"url" \| "inline"` | Server default `"inline"`. Accepted, but the API documents no effect on Tako cards. |
 
 **`sources.web`**:
 
 | Option | Type | Notes |
 | --- | --- | --- |
-| `count` | `number` | 1-20, server default 5. |
+| `count` | `number` | 1-20. Server default 5 for `takoSearch`, 3 for `takoAnswer`. |
 | `includeContents` | `boolean` | Include full article text. |
 | `category` | `"news" \| "sports" \| "finance"` | Only `"news"` filters today. |
 | `includeDomains` / `excludeDomains` | `string[]` | Bare hosts, for example `"cnn.com"`. |
@@ -130,7 +130,7 @@ Both tools take the same config. Every field is optional; omit one and the API's
 | `mode` | `"url" \| "inline"` | Default `"url"`. Changes the tool description the model reads. |
 | `contentFormat` | `"csv" \| "json_records" \| "json_compact"` | Server default `"csv"` on this surface. |
 | `maxRows` | `number` | Card exports only. The first 20 rows are free; **rows above that bill at the per-1000-row rate**. |
-| `maxChars` | `number` | Web page text only. |
+| `maxChars` | `number` | Web page text only. Server default 1000000, the full page text. |
 | `quoteOnly` | `boolean` | Price the export without fetching it. The request is free and the payload is null. |
 
 This SDK does not check the numeric ranges. The API enforces them and returns a 400, so a limit Tako raises works immediately without an SDK release.

@@ -3,6 +3,7 @@ import {
   buildContentsRequestBody,
   buildDataSourceSettings,
   buildGeoLocation,
+  buildOutputSettings,
   buildSearchRequestBody,
   buildWebSourceSettings,
 } from "../../src/request";
@@ -258,6 +259,28 @@ describe("GeoLocation — section contract", () => {
     expect(body).toEqual({ latitude: 37.77, longitude: -122.42 });
     expect(check("GeoLocation", body).errors).toEqual([]);
     expect(Object.keys(body).sort()).toEqual(propertiesOf("GeoLocation").sort());
+  });
+});
+
+describe("OutputSettings — section contract", () => {
+  it("maps every documented option and covers every property the schema defines", () => {
+    // Fails when Tako adds an output option, which is the signal to expose it.
+    const body = buildOutputSettings({ imageDarkMode: true, forceRefresh: false });
+    expect(body).toEqual({ image_dark_mode: true, force_refresh: false });
+    expect(check("OutputSettings", body).errors).toEqual([]);
+    expect(Object.keys(body).sort()).toEqual(propertiesOf("OutputSettings").sort());
+  });
+});
+
+describe("Sources — section contract", () => {
+  it("covers every property the schema defines", () => {
+    // Fails when Tako adds a third source key, which is the signal to expose it.
+    const body = buildSearchRequestBody(
+      { sources: { data: { count: 1 }, web: { count: 1 } } },
+      "q",
+    );
+    expect(check("SearchRequest", body).errors).toEqual([]);
+    expect(Object.keys(body.sources!).sort()).toEqual(propertiesOf("Sources").sort());
   });
 });
 
