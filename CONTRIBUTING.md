@@ -101,6 +101,14 @@ new `tako-sdk` either — the range is a caret, so they resolve it at their next
 install whether or not this repo ever merges the bump. Merging only moves this
 repo's lockfile. This package releases when its own tool layer changes.
 
+Since 4.0 that caret carries more than it used to, so treat those pins as a
+lagging indicator, not a gate. Under 3.x a `tako-sdk` minor moved only the wire
+types and the hand-written config was structurally immune. Now the `Omit` lists
+in `src/types.ts` ship unresolved in `dist/index.d.ts` and bind to whatever
+`tako-sdk` the consumer installed, so a minor can change this package's public
+config type in their tree. The pins redden here on the Dependabot PR — after
+those consumers have already resolved it. `check:sdk-lag` fires on a major only.
+
 Nothing merges itself here. Auto-merge was considered and dropped: it would
 require enabling "Allow auto-merge" and making `build-test` a required check on
 `main`, and `gh pr merge --auto` merges immediately when there is no required

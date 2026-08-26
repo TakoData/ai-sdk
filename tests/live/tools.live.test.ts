@@ -10,7 +10,7 @@
  * normalized result.
  *
  * The two rules of the live suite still hold. Assert contract, never content.
- * Never trigger a billed export — the contents check quotes with `quoteOnly`,
+ * Never trigger a billed export — the contents check quotes with `quote_only`,
  * which prices an export for free.
  */
 import { describe, expect, it } from "vitest";
