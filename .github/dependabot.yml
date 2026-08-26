@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: daily
+    # Only the runtime dependency this package exists to wrap. Widening this is
+    # a separate decision; today the goal is that a tako-sdk release reaches
+    # this package without a human remembering to bump it.
+    allow:
+      - dependency-name: tako-sdk
+    # Wait out pnpm's supply-chain cooldown before opening the PR. pnpm 11
+    # enforces a 24-hour minimumReleaseAge, and `pnpm install --frozen-lockfile`
+    # rejects a lockfile entry published inside that window
+    # (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION). A PR opened minutes after a
+    # tako-sdk release therefore goes red on install, and that red says nothing
+    # about whether the new SDK broke this package — which is the whole reason
+    # the PR exists. Two days clears the cutoff with margin, so the two policies
+    # agree instead of fighting.
+    cooldown:
+      default-days: 2
+    commit-message:
+      prefix: "chore(deps)"

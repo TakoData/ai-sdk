@@ -1,13 +1,8 @@
 import { tool, type Tool } from "ai";
 import { z } from "zod";
-import { callTako } from "../client";
-import {
-  buildContentsRequestBody,
-  normalizeContentsResult,
-  resolveApiKey,
-  resolveBaseUrl,
-} from "../request";
-import type { TakoContentsConfig, TakoContentsResponse, TakoContentsResult } from "../types";
+import { callTako, lazyTakoClient } from "../client";
+import { buildContentsRequestBody, normalizeContentsResult } from "../request";
+import type { TakoContentsConfig, TakoContentsResult } from "../types";
 
 /**
  * Download the data behind a result URL: a Tako card's CSV or a web page's text.
@@ -22,6 +17,7 @@ export function takoContents(
   config: TakoContentsConfig = {},
 ): Tool<{ url: string }, TakoContentsResult> {
   const mode = config.mode ?? "url";
+  const client = lazyTakoClient(config);
   return tool({
     description:
       "Fetch the real data behind a result url — a Tako card's webpage_url yields its " +
@@ -56,15 +52,11 @@ export function takoContents(
         .url()
         .describe("A TakoCard.webpage_url or WebResult.url to download contents for"),
     }),
-    execute: async ({ url }: { url: string }) =>
-      normalizeContentsResult(
-        await callTako<TakoContentsResponse>({
-          baseUrl: resolveBaseUrl(config),
-          path: "/api/v1/contents",
-          apiKey: resolveApiKey(config),
-          body: buildContentsRequestBody(url, config),
-          operation: "fetch contents",
-        }),
-      ),
+    execute: async ({ url }: { url: string }) => {
+      const tako = client();
+      return normalizeContentsResult(
+        await callTako("fetch contents", () => tako.contents(buildContentsRequestBody(url, config))),
+      );
+    },
   });
 }

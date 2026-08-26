@@ -12,6 +12,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/live/**/*.test.ts"],
+    // Turns a keyless CI run from 19 silent skips into a failure. See the file.
+    globalSetup: ["tests/live/_require-key.ts"],
     testTimeout: 60_000,
     hookTimeout: 60_000,
     fileParallelism: false,

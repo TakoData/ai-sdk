@@ -1,14 +1,8 @@
 import { tool, type Tool } from "ai";
 import { z } from "zod";
-import { callTako } from "../client";
-import {
-  assertValidRetrievalConfig,
-  buildSearchRequestBody,
-  normalizeAnswerResult,
-  resolveApiKey,
-  resolveBaseUrl,
-} from "../request";
-import type { TakoRetrievalConfig, TakoAnswerResponse, TakoAnswerResult } from "../types";
+import { callTako, lazyTakoClient } from "../client";
+import { assertValidRetrievalConfig, buildSearchRequestBody, normalizeAnswerResult } from "../request";
+import type { TakoRetrievalConfig, TakoAnswerResult } from "../types";
 
 /**
  * Tako answer: fast-pipeline retrieval plus an LLM-synthesized answer grounded in the results.
@@ -22,6 +16,7 @@ export function takoAnswer(
   // Fail here, not in `execute`. A contradictory config is a wiring mistake, and
   // the model that reads an `execute` error cannot fix one.
   assertValidRetrievalConfig(config);
+  const client = lazyTakoClient(config);
   return tool({
     description:
       "Ask Tako one specific data question and get one synthesized, citation-backed " +
@@ -43,15 +38,11 @@ export function takoAnswer(
         .max(500)
         .describe("The question to answer"),
     }),
-    execute: async ({ query }: { query: string }) =>
-      normalizeAnswerResult(
-        await callTako<TakoAnswerResponse>({
-          baseUrl: resolveBaseUrl(config),
-          path: "/api/v1/answer",
-          apiKey: resolveApiKey(config),
-          body: buildSearchRequestBody(config, query),
-          operation: "answer",
-        }),
-      ),
+    execute: async ({ query }: { query: string }) => {
+      const tako = client();
+      return normalizeAnswerResult(
+        await callTako("answer", () => tako.answer(buildSearchRequestBody(config, query))),
+      );
+    },
   });
 }

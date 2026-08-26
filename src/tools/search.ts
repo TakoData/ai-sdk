@@ -1,14 +1,8 @@
 import { tool, type Tool } from "ai";
 import { z } from "zod";
-import { callTako } from "../client";
-import {
-  assertValidRetrievalConfig,
-  buildSearchRequestBody,
-  normalizeSearchResult,
-  resolveApiKey,
-  resolveBaseUrl,
-} from "../request";
-import type { TakoRetrievalConfig, TakoSearchResponse, TakoSearchResult } from "../types";
+import { callTako, lazyTakoClient } from "../client";
+import { assertValidRetrievalConfig, buildSearchRequestBody, normalizeSearchResult } from "../request";
+import type { TakoRetrievalConfig, TakoSearchResult } from "../types";
 
 /** Tako fast-pipeline search: returns Tako cards + web results, no LLM synthesis. */
 export function takoSearch(
@@ -17,6 +11,7 @@ export function takoSearch(
   // Fail here, not in `execute`. A contradictory config is a wiring mistake, and
   // the model that reads an `execute` error cannot fix one.
   assertValidRetrievalConfig(config);
+  const client = lazyTakoClient(config);
   return tool({
     description:
       "Search Tako for live data and well-sourced facts — knowledge cards (charts and " +
@@ -43,15 +38,11 @@ export function takoSearch(
         .max(500)
         .describe("Natural-language description of what you're looking for"),
     }),
-    execute: async ({ query }: { query: string }) =>
-      normalizeSearchResult(
-        await callTako<TakoSearchResponse>({
-          baseUrl: resolveBaseUrl(config),
-          path: "/api/v3/search",
-          apiKey: resolveApiKey(config),
-          body: buildSearchRequestBody(config, query),
-          operation: "search",
-        }),
-      ),
+    execute: async ({ query }: { query: string }) => {
+      const tako = client();
+      return normalizeSearchResult(
+        await callTako("search", () => tako.search(buildSearchRequestBody(config, query))),
+      );
+    },
   });
 }

@@ -5,10 +5,8 @@ name: live
 on:
   workflow_dispatch:
   schedule:
-    # Mondays, 13:00 UTC. The point of a schedule is to notice the API moving
-    # under a published version: the contract suite reads a pinned snapshot and
-    # only moves when somebody runs `pnpm spec:refresh`, so nothing else fails
-    # when Tako changes and this repo does not.
+    # Mondays, 13:00 UTC. Two jobs run: `live` smokes the tools against the real
+    # API, and `sdk-lag` fails when a tako-sdk major has gone unaddressed.
     - cron: "0 13 * * 1"
 
 # One run at a time. Concurrent runs on the same key hit Tako's throttle and
@@ -35,3 +33,21 @@ jobs:
           TAKO_API_KEY: ${{ secrets.TAKO_API_KEY }}
           # Optional. Leave unset to test the same host the SDK defaults to.
           TAKO_BASE_URL: ${{ vars.TAKO_BASE_URL }}
+
+  # Its own job, with no `if:`. This is the leg that has to fire when no pull
+  # request is open, which is exactly when nobody is watching for a tako-sdk
+  # major. As a step inside `live` it inherited that job's LIVE_TESTS_ENABLED
+  # gate, and the repo sets no Actions variables, so it never ran on a single
+  # scheduled build. It also needs no API key: keeping it out of `live` means a
+  # lagging major stops masking the live smoke signal.
+  sdk-lag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:sdk-lag

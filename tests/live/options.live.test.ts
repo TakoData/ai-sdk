@@ -1,17 +1,11 @@
 /**
- * Live checks against the real Tako API.
+ * Live smoke checks against the real Tako API.
  *
- * Every other suite in this repo proves a request body is *legal* against a
- * vendored snapshot of the OpenAPI document. None of them prove the API honors
- * the option, or that the snapshot still matches reality. That gap is why the
- * 2.x types rotted for two months while 18 tests stayed green.
- *
- * These tests close it from the other side: they send real requests and validate
- * the responses with the same ajv validators the contract suite uses, so a
- * response that stops matching the vendored spec fails here even though nothing
- * in this repo changed. That makes this the upstream drift detector the parity
- * tests cannot be — those read a pinned snapshot and only move when a human runs
- * `pnpm spec:refresh`.
+ * `pnpm test` runs against a stubbed fetch, so nothing there proves the API
+ * accepts an option or returns the envelope the tools normalize. These tests
+ * send real requests to check exactly that. Whether the API still matches its
+ * OpenAPI spec is `tako-sdk`'s contract (its types are generated from the spec)
+ * and the monorepo's conformance suite's job, not this package's.
  *
  * Excluded from `pnpm test`. Run with `pnpm test:live` and a key, or let the
  * `live` workflow run it on a schedule. Without `TAKO_API_KEY` every test skips
@@ -25,7 +19,7 @@
  *    the only way this file touches export pricing.
  */
 import { describe, expect, it } from "vitest";
-import { check } from "../contract/spec";
+import { ContentsRequestToJSON, SearchRequestToJSON } from "tako-sdk";
 import { buildContentsRequestBody, buildSearchRequestBody } from "../../src/request";
 import type { TakoContentsConfig, TakoRetrievalConfig } from "../../src/types";
 
@@ -54,7 +48,7 @@ async function post(path: string, body: unknown) {
 }
 
 const search = (config: TakoRetrievalConfig, query = "nvidia revenue") =>
-  post("/api/v3/search", buildSearchRequestBody(config, query));
+  post("/api/v3/search", SearchRequestToJSON(buildSearchRequestBody(config, query)));
 
 const hostsOf = (json: Record<string, unknown> | null) =>
   ((json?.web_results as { url: string }[] | undefined) ?? []).map((w) => {
@@ -113,13 +107,14 @@ describe.skipIf(!KEY)("live: the request options reach a real API", () => {
   }, TIMEOUT);
 
   it(
-    "a live search response still validates against the vendored spec",
+    "a live search response has the envelope the tools normalize",
     async () => {
-      // The drift detector. Nothing in this repo has to change for this to fail —
-      // it fails when the API stops matching the snapshot the other suites trust.
       const r = await search({ sources: { data: { includeContents: true }, web: { count: 3 } } });
       expect(r.status).toBe(200);
-      expect(check("SearchResponse", r.json).errors).toEqual([]);
+      expect(typeof r.json?.request_id).toBe("string");
+      for (const key of ["cards", "web_results"]) {
+        if (r.json?.[key] !== undefined) expect(Array.isArray(r.json?.[key])).toBe(true);
+      }
     },
     TIMEOUT,
   );
@@ -181,9 +176,9 @@ describe.skipIf(!KEY)("live: contents pricing, quoted rather than bought", () =>
       if (!url) return; // No card to quote against.
 
       const quote = async (config: TakoContentsConfig) => {
-        const r = await post("/api/v1/contents", buildContentsRequestBody(url, config));
+        const r = await post("/api/v1/contents", ContentsRequestToJSON(buildContentsRequestBody(url, config)));
         expect(r.status, r.text.slice(0, 300)).toBe(200);
-        expect(check("ContentsResponse", r.json).errors).toEqual([]);
+        expect(typeof r.json?.request_id).toBe("string");
         return (r.json?.contents as Record<string, unknown>[] | undefined)?.[0];
       };
 

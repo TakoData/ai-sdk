@@ -68,7 +68,10 @@ describe("takoContents", () => {
     expect(res.contents[0].data).toBe("prose");
   });
 
-  it("surfaces web text, which carries a null content_format", async () => {
+  it("collapses an explicit null content_format to undefined, like an absent key", async () => {
+    // The generated deserializer maps `json[k] == null ? undefined : ...`, so
+    // both wire shapes for "no format" arrive as undefined. 3.x passed the null
+    // through, so a consumer branching on `=== null` breaks; `== null` does not.
     stubFetch(
       200,
       JSON.stringify({
@@ -79,7 +82,8 @@ describe("takoContents", () => {
     const res = (await runTool(takoContents({ apiKey: "key", mode: "inline" }), {
       url: "https://e.com/a",
     })) as any;
-    expect(res.contents[0].content_format).toBeNull();
+    expect(res.contents[0].content_format).toBeUndefined();
+    expect(res.contents[0].content_format == null).toBe(true);
     expect(res.contents[0].data).toBe("prose");
   });
 

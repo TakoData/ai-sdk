@@ -27,7 +27,9 @@ const REPO = fileURLToPath(new URL("..", import.meta.url));
 const pkg = JSON.parse(readFileSync(join(REPO, "package.json"), "utf8"));
 
 /** Packages that must never reach a consumer's install. */
-const DEV_ONLY = ["tako-sdk", "ajv", "ajv-formats", "yaml", "tsup", "vitest", "typescript"];
+const DEV_ONLY = ["tsup", "vitest", "typescript"];
+/** Runtime dependencies that must reach it. */
+const RUNTIME = ["tako-sdk"];
 
 let scratch;
 let tarball;
@@ -92,6 +94,10 @@ try {
   const leaked = DEV_ONLY.filter((d) => existsSync(join(scratch, "node_modules", d)));
   if (leaked.length) fail(`dev-only packages reached the consumer install: ${leaked.join(", ")}`);
   step("no dev-only package reached the install");
+
+  const missing = RUNTIME.filter((d) => !existsSync(join(scratch, "node_modules", d, "package.json")));
+  if (missing.length) fail(`runtime dependencies missing from the consumer install: ${missing.join(", ")}`);
+  step("every runtime dependency reached the install");
 
   // Runtime: import the built entry point and build all three tools.
   writeFileSync(
