@@ -15,13 +15,13 @@
  *
  * 1. Assert contract, never content. "A card came back" is stable; "the first
  *    card is Nvidia revenue" is a ranking change away from a false alarm.
- * 2. Never trigger a billed export. `quoteOnly` prices one for free, and that is
+ * 2. Never trigger a billed export. `quote_only` prices one for free, and that is
  *    the only way this file touches export pricing.
  */
 import { describe, expect, it } from "vitest";
-import { ContentsRequestToJSON, SearchRequestToJSON } from "tako-sdk";
-import { buildContentsRequestBody, buildSearchRequestBody } from "../../src/request";
-import type { TakoContentsConfig, TakoRetrievalConfig } from "../../src/types";
+import { AnswerRequestToJSON, ContentsRequestToJSON, SearchRequestToJSON } from "tako-sdk";
+import { buildAnswerRequestBody, buildContentsRequestBody, buildSearchRequestBody } from "../../src/request";
+import type { TakoAnswerConfig, TakoContentsConfig, TakoRetrievalConfig } from "../../src/types";
 
 const KEY = process.env.TAKO_API_KEY ?? process.env.TAKO_API_TOKEN;
 
@@ -50,6 +50,9 @@ async function post(path: string, body: unknown) {
 const search = (config: TakoRetrievalConfig, query = "nvidia revenue") =>
   post("/api/v3/search", SearchRequestToJSON(buildSearchRequestBody(config, query)));
 
+const answer = (config: TakoAnswerConfig, query = "what is nvidia's revenue") =>
+  post("/api/v1/answer", AnswerRequestToJSON(buildAnswerRequestBody(config, query)));
+
 const hostsOf = (json: Record<string, unknown> | null) =>
   ((json?.web_results as { url: string }[] | undefined) ?? []).map((w) => {
     try {
@@ -73,7 +76,7 @@ describe.skipIf(!KEY)("live: the request options reach a real API", () => {
 
       const [a, b] = await Promise.all([
         search({}),
-        search({ effort: "fast", countryCode: "US", locale: "en-US" }),
+        search({ effort: "fast", country_code: "US", locale: "en-US" }),
       ]);
 
       expect(a.status, a.text.slice(0, 300)).toBe(200);
@@ -90,15 +93,17 @@ describe.skipIf(!KEY)("live: the request options reach a real API", () => {
   // which is how `deferDataRetrieval` failed for two months while typed as valid.
   const accepted: [string, TakoRetrievalConfig][] = [
     ["location", { location: { latitude: 37.77, longitude: -122.42 } }],
-    ["data.contentFormat", { sources: { data: { includeContents: true, contentFormat: "json_records" } } }],
-    ["data.mode", { sources: { data: { includeContents: true, mode: "inline" } } }],
+    ["include_related", { include_related: 2 }],
+    ["data.content_format", { sources: { data: { include_contents: true, content_format: "json_records" } } }],
+    ["data.max_rows", { sources: { data: { include_contents: true, max_rows: 5 } } }],
     ["web.category", { sources: { web: { category: "news" } } }],
-    ["web.includeDomains", { sources: { web: { includeDomains: ["reuters.com"] } } }],
-    ["web.excludeDomains", { sources: { web: { excludeDomains: ["reddit.com"] } } }],
-    ["web.snippetMaxChars", { sources: { web: { snippetMaxChars: 300 } } }],
-    ["web.articleContentMaxChars", { sources: { web: { includeContents: true, articleContentMaxChars: 5000 } } }],
-    ["web.publishedAfter", { sources: { web: { publishedAfter: "2026-01-01" } } }],
-    ["web.publishedBefore", { sources: { web: { publishedBefore: "2026-12-31" } } }],
+    ["web.include_domains", { sources: { web: { include_domains: ["reuters.com"] } } }],
+    ["web.exclude_domains", { sources: { web: { exclude_domains: ["reddit.com"] } } }],
+    ["web.snippet_max_chars", { sources: { web: { snippet_max_chars: 300 } } }],
+    ["web.highlights", { sources: { web: { highlights: true } } }],
+    ["web.article_content_max_chars", { sources: { web: { include_contents: true, article_content_max_chars: 5000 } } }],
+    ["web.published_after", { sources: { web: { published_after: new Date("2026-01-01") } } }],
+    ["web.published_before", { sources: { web: { published_before: new Date("2026-12-31") } } }],
   ];
 
   it.each(accepted)("the API accepts %s", async (_name, config) => {
@@ -109,7 +114,7 @@ describe.skipIf(!KEY)("live: the request options reach a real API", () => {
   it(
     "a live search response has the envelope the tools normalize",
     async () => {
-      const r = await search({ sources: { data: { includeContents: true }, web: { count: 3 } } });
+      const r = await search({ sources: { data: { include_contents: true }, web: { count: 3 } } });
       expect(r.status).toBe(200);
       expect(typeof r.json?.request_id).toBe("string");
       for (const key of ["cards", "web_results"]) {
@@ -120,10 +125,10 @@ describe.skipIf(!KEY)("live: the request options reach a real API", () => {
   );
 
   it(
-    "includeDomains and excludeDomains actually filter",
+    "include_domains and exclude_domains actually filter",
     async () => {
       const only = await search(
-        { sources: { web: { includeDomains: ["reuters.com"], count: 5 } } },
+        { sources: { web: { include_domains: ["reuters.com"], count: 5 } } },
         "nvidia earnings",
       );
       expect(only.status).toBe(200);
@@ -136,7 +141,7 @@ describe.skipIf(!KEY)("live: the request options reach a real API", () => {
       const drop = hostsOf(unfiltered.json)[0];
       if (drop) {
         const without = await search(
-          { sources: { web: { excludeDomains: [drop], count: 5 } } },
+          { sources: { web: { exclude_domains: [drop], count: 5 } } },
           "nvidia earnings",
         );
         expect(without.status).toBe(200);
@@ -150,10 +155,10 @@ describe.skipIf(!KEY)("live: the request options reach a real API", () => {
     ["json_records", "records"],
     ["json_compact", "dataset"],
   ] as const)(
-    "contentFormat %s is honored and populates %s",
+    "content_format %s is honored and populates %s",
     async (format, field) => {
       const r = await search({
-        sources: { data: { includeContents: true, contentFormat: format, count: 1 } },
+        sources: { data: { include_contents: true, content_format: format, count: 1 } },
       });
       expect(r.status).toBe(200);
       const content = (r.json?.cards as { content?: Record<string, unknown> }[] | undefined)?.[0]
@@ -168,7 +173,7 @@ describe.skipIf(!KEY)("live: the request options reach a real API", () => {
 
 describe.skipIf(!KEY)("live: contents pricing, quoted rather than bought", () => {
   it(
-    "quoteOnly returns a price and no content, and maxRows clamps instead of failing",
+    "quote_only returns a price and no content, and max_rows clamps instead of failing",
     async () => {
       const seed = await search({});
       expect(seed.status).toBe(200);
@@ -182,8 +187,8 @@ describe.skipIf(!KEY)("live: contents pricing, quoted rather than bought", () =>
         return (r.json?.contents as Record<string, unknown>[] | undefined)?.[0];
       };
 
-      const small = await quote({ quoteOnly: true, maxRows: 20 });
-      const large = await quote({ quoteOnly: true, maxRows: 2000 });
+      const small = await quote({ quote_only: true, max_rows: 20 });
+      const large = await quote({ quote_only: true, max_rows: 2000 });
       if (!small || !large) return;
 
       // A quote carries pricing and withholds content.
@@ -192,16 +197,41 @@ describe.skipIf(!KEY)("live: contents pricing, quoted rather than bought", () =>
       expect(small.export_pricing).toBeTruthy();
 
       // `cost` on a quote is the price the export would be, not a charge — which
-      // is only observable because it scales with maxRows.
+      // is only observable because it scales with max_rows.
       expect(typeof small.cost).toBe("number");
       expect(large.cost as number).toBeGreaterThan(small.cost as number);
 
       // The documented behavior worth a live test: over the ceiling the API
       // clamps and bills what it returns, so a caller trusting a 400 gets a
       // short export, a charge, and no error.
-      const over = await quote({ quoteOnly: true, maxRows: 999_999 });
+      const over = await quote({ quote_only: true, max_rows: 999_999 });
       if (over) expect(over.cost).toBe(large.cost);
     },
     TIMEOUT * 3,
+  );
+});
+
+describe.skipIf(!KEY)("live: answer structured output", () => {
+  it(
+    "output_schema returns structured_output or a reason it could not",
+    async () => {
+      // Assert contract, never content: the schema is filled or the API says
+      // why not. Either is a pass; a 400 or neither field is the failure.
+      const r = await answer({
+        effort: "fast",
+        output_schema: {
+          type: "object",
+          properties: { revenue_usd: { type: ["number", "null"], description: "Latest annual revenue in USD" } },
+          required: ["revenue_usd"],
+          additionalProperties: false,
+        },
+      });
+      expect(r.status, r.text.slice(0, 300)).toBe(200);
+      expect(typeof r.json?.answer).toBe("string");
+      const filled = r.json?.structured_output !== undefined;
+      const explained = r.json?.structured_output_error != null;
+      expect(filled || explained, JSON.stringify(r.json).slice(0, 300)).toBe(true);
+    },
+    TIMEOUT,
   );
 });

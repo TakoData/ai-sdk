@@ -62,7 +62,7 @@ describe.skipIf(!KEY)("live: each tool executes and returns a normalized result"
       const url = found.cards.find((c) => c.exportable && c.webpage_url)?.webpage_url;
       if (!url) return; // Nothing exportable came back; not this test's failure.
 
-      const res = (await runTool(takoContents({ ...config, quoteOnly: true }), {
+      const res = (await runTool(takoContents({ ...config, quote_only: true }), {
         url,
       })) as TakoContentsResult;
       expect(Array.isArray(res.contents)).toBe(true);
