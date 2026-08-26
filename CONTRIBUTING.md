@@ -111,6 +111,8 @@ red on install, which says nothing about whether the new SDK actually broke
 anything — and a check that is red for a reason nobody acts on is how a real
 failure gets ignored.
 
+## Examples
+
 Examples make live calls; run them manually with keys set in `.env` (see `.env.example`):
 
 ```bash

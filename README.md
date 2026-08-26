@@ -212,8 +212,8 @@ MIT
 
 ## Links
 
-- [Migrating from 3.x](./MIGRATING.md)
-- [Migrating from 2.x](./MIGRATING.md)
+- [Migrating from 3.x](./MIGRATING.md#3x--40)
+- [Migrating from 2.x](./MIGRATING.md#2x--30)
 - [Tako documentation](https://docs.tako.com)
 - [Vercel AI SDK](https://sdk.vercel.ai/docs)
 - [GitHub repository](https://github.com/TakoData/ai-sdk)

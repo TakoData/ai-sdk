@@ -19,9 +19,34 @@ Two decoded values changed shape:
 - `content_format` on a contents item is `undefined` where 3.x gave you `null`.
   The generated decoder maps `null` and an absent key to the same thing, so
   branch with `== null`, never `=== null`.
-- `citation_number` on a web result is gone. It was never in the OpenAPI spec
-  and the API has never sent it; the 3.x type declared a field that didn't
-  exist.
+- `citation_number` on a web result is gone. The spec 3.x vendored declared it,
+  but the public `WebResult` no longer does, and neither retrieval surface ever
+  filled one. Drop the branch that reads it.
+
+Two types changed shape, and both break at compile time rather than silently:
+
+- **`TakoExportPricing.free_rows` is optional, and always 0.** Row allowances
+  are gone — an account that pays nothing per row reports `row_cpm_usd` of 0
+  instead. The 3.x cost formula stops compiling with `TS18048`, because
+  `free_rows` can now be `undefined`. Drop the term: the cost is
+  `baseline_usd + row_cpm_usd * rows / 1000`, where `rows` is every row the
+  export returns. `row_cpm_usd` changed meaning to match — in 3.x it priced
+  only the rows above the allowance.
+- **`TakoContentFormat` gained a fourth member, `"card_json"`.** Pass it as
+  `contentFormat` to get a card's structured payload. An exhaustive `switch`
+  over the old three members stops compiling; add a case or a `default`.
+
+One runtime behavior changed with them:
+
+- **A tool resolves `TAKO_API_KEY` once, on its first call.** 3.x read the key
+  on every call, so a key rotated in `process.env` took effect on the next one.
+  4.0 builds the generated client once per tool and keeps it. To rotate a key
+  in-process, construct a new tool.
+
+Six response fields appeared upstream and need no edit to read: `related` on a
+search response, `structured_output` and `structured_output_error` on an answer
+response, `card_data` and `card_data_schema` on a result content, and
+`coverage_end` on data freshness.
 
 If you read a response field that isn't in the Tako OpenAPI spec, it's gone.
 Nothing else needs an edit. To use the un-aliased names, import them from
@@ -35,7 +60,7 @@ import type { SearchResponse } from "tako-sdk";   // same type as TakoSearchResp
 
 3.0 realigns this SDK's types with the current Tako API, and opens up the request options 2.x could not reach. Every **change** below is a case where 2.x described something the API no longer does — so if code depended on it, it was already broken at runtime, whatever TypeScript said. The **New options** section at the end is purely additive: nothing there requires an edit to working 2.x code.
 
-`tests/contract/` validates these types against Tako's published OpenAPI document and against [`tako-sdk`](https://www.npmjs.com/package/tako-sdk), Tako's official generated client, so a type that stops matching either one fails CI. Both are pinned snapshots, refreshed deliberately rather than continuously.
+At the time, `tests/contract/` validated these types against a vendored copy of Tako's OpenAPI document and against [`tako-sdk`](https://www.npmjs.com/package/tako-sdk), Tako's official generated client. Both were pinned snapshots, refreshed deliberately rather than continuously. 4.0 deleted that suite along with the hand-written types it guarded — see [3.x → 4.0](#3x--40).
 
 ### Config
 

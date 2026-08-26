@@ -59,7 +59,7 @@ export interface TakoDataSourceOptions extends TakoSourceOptions {
   contentFormat?: TakoContentFormat;
   /**
    * Graph node ids to pin into the search. Get ids from the /v1/graph endpoints,
-   * which this SDK does not wrap. Ids do not survive a knowledge-graph rebuild:
+   * which this SDK doesn't wrap. Ids don't survive a knowledge-graph rebuild:
    * resolve them per request rather than storing them.
    */
   nodeIds?: string[];
@@ -82,14 +82,14 @@ export interface TakoWebSourceOptions extends TakoSourceOptions {
   /**
    * Keep results published on or after this ISO date, "YYYY-MM-DD".
    *
-   * This is not a recency guarantee. The API keeps a result whose publication
-   * date it does not know, so undated pages still arrive.
+   * This isn't a recency guarantee. The API keeps a result whose publication
+   * date it doesn't know, so undated pages still arrive.
    */
   publishedAfter?: string;
   /**
    * Keep results published on or before this ISO date, "YYYY-MM-DD".
    *
-   * The API keeps a result whose publication date it does not know.
+   * The API keeps a result whose publication date it doesn't know.
    */
   publishedBefore?: string;
 }
@@ -137,9 +137,11 @@ export interface TakoContentsConfig extends TakoBaseConfig {
   /** Serialization for card data. Server default "csv" on this surface. */
   contentFormat?: TakoContentFormat;
   /**
-   * Cap on rows returned for a card export. The server default is the 20-row free
-   * allowance. Rows above that allowance bill at the per-1000-row rate, so raise
-   * this only when you need the extra rows. Web urls ignore this field.
+   * Cap on rows a card export returns and is priced against. Omit it to get the
+   * whole card, up to the 2,000-row ceiling Tako clamps to. Every row returned
+   * bills at `export_pricing.row_cpm_usd` per 1,000, on top of the flat
+   * `baseline_usd` — there's no free row allowance. A card holding fewer rows
+   * than the cap bills only what it holds. Web urls ignore this field.
    */
   maxRows?: number;
   /** Character cap on extracted web page text. Server default 1000000, the full page text. Card urls ignore this field. */
@@ -157,7 +159,7 @@ export interface TakoContentsConfig extends TakoBaseConfig {
 export type TakoUsageCompute = sdk.UsageCompute;
 export type TakoUsageData = sdk.UsageData;
 /**
- * Usage for one metered request. As of 2026-08 the API does not populate it on
+ * Usage for one metered request. As of 2026-08 the API doesn't populate it on
  * search, answer or contents. For per-item pricing today, read
  * `TakoResultContent.cost` and `TakoResultContent.export_pricing`.
  */
