@@ -36,11 +36,20 @@ export function resolveBaseUrl(config: { baseUrl?: string }): string {
  * carries. `WebSourceSettingsToJSON` serializes it back as
  * `toISOString().substring(0, 10)`; `new Date("YYYY-MM-DD")` is UTC midnight,
  * so the wire value equals the input.
+ *
+ * The round-trip check is what makes that last clause true. A day past the end
+ * of a real month parses and rolls forward rather than failing: `2026-02-31`
+ * becomes `2026-03-03`, `2026-04-31` becomes `2026-05-01`. Left unchecked the
+ * caller's date silently isn't the one Tako filters on. Only an out-of-range
+ * month or day beyond 31 gives an Invalid Date on its own.
  */
 function isoDate(value: string, name: string): Date {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(value) : new Date(NaN);
   if (Number.isNaN(date.getTime())) {
     throw new Error(`${name} must be an ISO date "YYYY-MM-DD", got ${JSON.stringify(value)}`);
+  }
+  if (date.toISOString().substring(0, 10) !== value) {
+    throw new Error(`${name} is not a real calendar date: ${JSON.stringify(value)}`);
   }
   return date;
 }
