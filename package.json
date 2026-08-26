@@ -21,11 +21,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.check.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:contract": "vitest run tests/contract",
     "test:live": "vitest run --config vitest.live.config.ts",
     "test:package": "node scripts/verify-package.mjs",
     "lint:package": "npm run --silent build && npx -y publint@latest --strict --pack npm && npx -y @arethetypeswrong/cli@latest --pack . --ignore-rules cjs-resolves-to-esm",
-    "spec:refresh": "curl -fsSL https://docs.tako.com/api-reference/openapi.yaml -o tests/contract/openapi.yaml",
     "prepublishOnly": "pnpm build"
   },
   "keywords": [
@@ -56,13 +54,12 @@
     "@ai-sdk/openai": "^4.0.0",
     "@types/node": "^24.10.1",
     "ai": "^7.0.0",
-    "ajv": "^8.20.0",
-    "ajv-formats": "^3.0.1",
-    "tako-sdk": "^1.1.10",
     "tsup": "^8.5.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "vitest": "^3.0.0",
-    "yaml": "^2.9.0"
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "tako-sdk": "^1.3.0"
   }
 }
