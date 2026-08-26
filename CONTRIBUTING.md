@@ -90,8 +90,11 @@ version bump, not as a hand-edited type:
    can't be forgotten.
 
 **When a Dependabot PR is red**, the API changed shape under the tool layer —
-a field this package maps into a request, or a response field it reads. Fix
-`src/request.ts` or the tool in that PR; don't pin the old version.
+a config key derived from a request type, or a response field a normalizer
+reads. The failure names the file: a request-shape change fails the pins in
+`tests/config_types.test.ts`, and the edit is an `Omit` list in `src/types.ts`;
+a response change fails a normalizer in `src/request.ts`. Don't pin the old
+version.
 
 A `chore(deps)` merge doesn't cut a release, and it isn't how consumers get the
 new `tako-sdk` either — the range is a caret, so they resolve it at their next

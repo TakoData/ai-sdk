@@ -80,6 +80,8 @@ takoSearch({
 
 News from the last week. Build dates with the ISO-string constructor: `new Date('2026-08-19')` is UTC midnight and serializes as that day everywhere; `new Date(2026, 7, 19)` is local midnight and serializes as the day before in any UTC+ timezone.
 
+Check that your date parsed before you pass it. `new Date()` returns an `Invalid Date` for a string it can't read, and that fails during serialization, so the tool call rejects with `Failed to search with Tako: Invalid time value` — a message that names neither the field nor the value, and reaches the model rather than you. The request never leaves the process.
+
 ```typescript
 takoSearch({
   sources: { web: { category: 'news', published_after: new Date('2026-08-19'), count: 5 } },

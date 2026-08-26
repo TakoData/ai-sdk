@@ -24,7 +24,7 @@ export function takoContents(
       "rows; any other url (a web result's) yields the page's full extracted text. Only " +
       "call this on a url returned by a prior search or answer call, which gives you a " +
       "caption and a chart but not the rows.\n\n" +
-      // `quoteOnly` outranks `mode`: the API ignores mode on a quote and returns
+      // `quote_only` outranks `mode`: the API ignores mode on a quote and returns
       // null for url and every payload field. Describing either delivery here
       // would promise content that never arrives, and the model's cheapest
       // recovery from an unexplained null is to call again.

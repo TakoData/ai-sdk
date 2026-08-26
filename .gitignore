@@ -7,3 +7,7 @@ dist
 # Local codebase-analysis output. Not part of the package; keep it out of the
 # public repo so a stray `git add -A` can't publish it.
 .understand-anything/
+
+# Local design specs and implementation plans. This repo is public, and a spec
+# cites private-monolith files and internal workflow; keep both out of it.
+docs/superpowers/
