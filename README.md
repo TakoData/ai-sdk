@@ -110,9 +110,11 @@ A `TakoRetrievalConfig` is also a valid `TakoAnswerConfig`, so one object can bu
 
 Two `takoContents` options also change the description the model reads, so pick them deliberately:
 
-- `mode: 'url'` (the API default) returns a short-lived presigned download link. The description tells the model to surface the link, not parse it.
+- `mode: 'url'` returns a short-lived presigned download link. The description tells the model to surface the link, not parse it.
 - `mode: 'inline'` returns the rows or page text in the response. The description tells the model to read and compute over them.
 - `quote_only: true` returns the export price and no content, for free. The description tells the model to report the price and not call again expecting rows.
+
+Leave `mode` unset and the API chooses — `'url'` today. This package sends no default and names none in the description; the model is told to read the response instead. Set `mode` to pin the delivery and tell the model which one to expect.
 
 `max_rows` fails quietly: a value over the 2,000-row ceiling is clamped, not rejected, and every row returned is billed. Read `total_rows` and `truncated` on the item to see what you got.
 

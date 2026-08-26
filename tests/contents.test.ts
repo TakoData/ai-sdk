@@ -113,13 +113,21 @@ describe("takoContents", () => {
   // The API ignores `mode` on a quote and nulls url and every payload field, so a
   // description promising either delivery would send the model looking for content
   // that never arrives.
-  it("describes quote-only mode instead of a delivery when quote_only is set", () => {
+  it("takes the delivery from quote_only and mode, and names none when mode is unset", () => {
     const quote = takoContents({ apiKey: "key", quote_only: true }).description ?? "";
     expect(quote).toMatch(/price quotes only/i);
     expect(quote).toMatch(/NO content/);
     expect(quote).not.toMatch(/read and compute over the numbers/);
 
-    const url = takoContents({ apiKey: "key" }).description ?? "";
+    // `mode` unset: the request body carries no default for it, so the
+    // description must not name one either. Asserting url mode here is what
+    // let the prompt promise a link the API had stopped sending.
+    const unset = takoContents({ apiKey: "key" }).description ?? "";
+    expect(unset).toMatch(/read the response rather than assuming/);
+    expect(unset).not.toMatch(/NOT the data itself/);
+    expect(unset).not.toMatch(/price quotes only/i);
+
+    const url = takoContents({ apiKey: "key", mode: "url" }).description ?? "";
     expect(url).toMatch(/presigned download url/);
     expect(url).not.toMatch(/price quotes only/i);
 
