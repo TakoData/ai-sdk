@@ -13,11 +13,10 @@ updates:
     # enforces a 24-hour minimumReleaseAge, and `pnpm install --frozen-lockfile`
     # REJECTS a lockfile entry published inside that window
     # (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION). A PR opened minutes after a
-    # tako-sdk release therefore fails `ci` on install, auto-merge never fires
-    # because it waits on a green `ci`, and the bump stalls until a human adds
-    # the version to minimumReleaseAgeExclude in pnpm-workspace.yaml. Two days
-    # clears the cutoff with margin, so the two policies agree instead of
-    # deadlocking.
+    # tako-sdk release therefore goes red on install, and that red says nothing
+    # about whether the new SDK broke this package — which is the whole reason
+    # the PR exists. Two days clears the cutoff with margin, so the two policies
+    # agree instead of fighting.
     cooldown:
       default-days: 2
     commit-message:

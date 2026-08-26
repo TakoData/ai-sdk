@@ -81,9 +81,10 @@ version bump, not as a hand-edited type:
 
 1. Dependabot opens a `chore(deps): bump tako-sdk` PR daily when there is one
    (`.github/dependabot.yml`, scoped to `tako-sdk` only).
-2. `dependabot-automerge.yml` merges a minor or patch bump once `ci` is green.
-3. A major bump stays open. Read the `tako-sdk` changelog, widen the range, fix
-   whatever `pnpm typecheck` and `pnpm test` report, and merge by hand.
+2. `ci` runs against the new version on that PR. That is the point of the PR:
+   it is a canary, not a delivery mechanism. Review and merge it by hand.
+3. A major bump needs more than a merge. Read the `tako-sdk` changelog, widen
+   the range, and fix whatever `pnpm typecheck` and `pnpm test` report.
 4. `pnpm check:sdk-lag` (in `ci.yml` and the weekly `live.yml`) fails when npm
    has a `tako-sdk` major the range in `package.json` can't reach, so step 3
    can't be forgotten.
@@ -92,14 +93,23 @@ version bump, not as a hand-edited type:
 a field this package maps into a request, or a response field it reads. Fix
 `src/request.ts` or the tool in that PR; don't pin the old version.
 
-A `chore(deps)` merge doesn't cut a release. Consumers get the new `tako-sdk` at
-their next install because the range is a caret. This package releases when
-its own tool layer changes.
+A `chore(deps)` merge doesn't cut a release, and it isn't how consumers get the
+new `tako-sdk` either — the range is a caret, so they resolve it at their next
+install whether or not this repo ever merges the bump. Merging only moves this
+repo's lockfile. This package releases when its own tool layer changes.
 
-The Dependabot config waits two days before opening a bump. pnpm 11 enforces a
-24-hour `minimumReleaseAge`, and `pnpm install --frozen-lockfile` rejects a
-lockfile entry published inside that window, so a PR opened any sooner fails
-`ci` on install and never auto-merges.
+Nothing merges itself here. Auto-merge was considered and dropped: it would
+require enabling "Allow auto-merge" and making `build-test` a required check on
+`main`, and `gh pr merge --auto` merges immediately when there is no required
+check to wait for. Given the caret, it would have bought hygiene, not safety.
+
+The Dependabot config waits two days before opening a bump, and that delay is
+load-bearing. pnpm 11 enforces a 24-hour `minimumReleaseAge`, and
+`pnpm install --frozen-lockfile` rejects a lockfile entry published inside that
+window (`ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`). A PR opened any sooner goes
+red on install, which says nothing about whether the new SDK actually broke
+anything — and a check that is red for a reason nobody acts on is how a real
+failure gets ignored.
 
 Examples make live calls; run them manually with keys set in `.env` (see `.env.example`):
 
