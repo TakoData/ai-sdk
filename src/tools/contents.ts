@@ -28,7 +28,7 @@ export function takoContents(
       // null for url and every payload field. Describing either delivery here
       // would promise content that never arrives, and the model's cheapest
       // recovery from an unexplained null is to call again.
-      (config.quoteOnly
+      (config.quote_only
         ? "Configured for price quotes only: returns the export cost and rate card, and NO " +
           "content. The url and data fields are always null and the call is free — report " +
           "the price, and do not call again expecting rows.\n\n"

@@ -19,13 +19,13 @@ const OK = JSON.stringify({
 afterEach(() => vi.unstubAllGlobals());
 
 describe("takoContents", () => {
-  it("posts to /api/v1/contents in url mode by default", async () => {
+  it("posts to /api/v1/contents with only the url, leaving mode to the API", async () => {
     const fetchMock = stubFetch(200, OK);
     const t = takoContents({ apiKey: "key" });
     const res = await runTool(t, { url: "https://tako.com/card/x" });
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("https://tako.com/api/v1/contents");
-    expect(JSON.parse(init.body as string)).toEqual({ url: "https://tako.com/card/x", mode: "url" });
+    expect(JSON.parse(init.body as string)).toEqual({ url: "https://tako.com/card/x" });
     expect((res as any).contents[0].content_format).toBe("csv");
   });
 
@@ -99,7 +99,7 @@ describe("takoContents", () => {
 
   it("sends the new contents options on the wire", async () => {
     const fetchMock = stubFetch(200, OK);
-    const t = takoContents({ apiKey: "key", mode: "inline", maxRows: 100, quoteOnly: true });
+    const t = takoContents({ apiKey: "key", mode: "inline", max_rows: 100, quote_only: true });
     await runTool(t, { url: "https://tako.com/card/x" });
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(JSON.parse(init.body as string)).toEqual({
@@ -113,8 +113,8 @@ describe("takoContents", () => {
   // The API ignores `mode` on a quote and nulls url and every payload field, so a
   // description promising either delivery would send the model looking for content
   // that never arrives.
-  it("describes quote-only mode instead of a delivery when quoteOnly is set", () => {
-    const quote = takoContents({ apiKey: "key", quoteOnly: true }).description ?? "";
+  it("describes quote-only mode instead of a delivery when quote_only is set", () => {
+    const quote = takoContents({ apiKey: "key", quote_only: true }).description ?? "";
     expect(quote).toMatch(/price quotes only/i);
     expect(quote).toMatch(/NO content/);
     expect(quote).not.toMatch(/read and compute over the numbers/);
@@ -128,10 +128,10 @@ describe("takoContents", () => {
     expect(inline).not.toMatch(/price quotes only/i);
   });
 
-  // quoteOnly outranks mode in the description, but the wire still carries both.
+  // quote_only outranks mode in the description, but the wire still carries both.
   it("still sends mode alongside quote_only", async () => {
     const fetchMock = stubFetch(200, OK);
-    const t = takoContents({ apiKey: "key", mode: "inline", quoteOnly: true });
+    const t = takoContents({ apiKey: "key", mode: "inline", quote_only: true });
     await runTool(t, { url: "https://tako.com/card/x" });
     const init = fetchMock.mock.calls[0][1] as RequestInit;
     expect(JSON.parse(init.body as string)).toEqual({

@@ -20,14 +20,14 @@ describe("takoSearch", () => {
     expect((res as any).request_id).toBe("r");
   });
 
-  it("maps source + output overrides to snake_case and omits absent sources", async () => {
+  it("sends the config keys as given and omits absent sources", async () => {
     const fetchMock = stubFetch(200, OK);
     const t = takoSearch({
       apiKey: "key",
       effort: "deep",
-      sources: { data: { count: 10, includeContents: true } },
+      sources: { data: { count: 10, include_contents: true } },
       timezone: "America/New_York",
-      outputSettings: { imageDarkMode: true },
+      output_settings: { image_dark_mode: true },
     });
     await runTool(t, { query: "x" });
     const init = fetchMock.mock.calls[0][1] as RequestInit;
@@ -38,18 +38,6 @@ describe("takoSearch", () => {
       timezone: "America/New_York",
       output_settings: { image_dark_mode: true },
     });
-  });
-
-  it("maps the deprecated `tako` source alias onto the `data` wire key", async () => {
-    const fetchMock = stubFetch(200, OK);
-    const t = takoSearch({
-      apiKey: "key",
-      sources: { tako: { count: 10, includeContents: true } },
-    });
-    await runTool(t, { query: "x" });
-    const init = fetchMock.mock.calls[0][1] as RequestInit;
-    const body = JSON.parse(init.body as string);
-    expect(body.sources).toEqual({ data: { count: 10, include_contents: true } });
   });
 
   it("normalizes absent collections to empty arrays", async () => {
@@ -85,45 +73,24 @@ describe("takoSearch", () => {
     expect(fetchMock.mock.calls[0][0]).toBe("https://e.com/api/v3/search");
   });
 
-  it("sends the new web filters on the wire", async () => {
+  it("sends web filters and the options 4.0 could not reach", async () => {
     const fetchMock = stubFetch(200, OK);
     const t = takoSearch({
       apiKey: "key",
-      sources: { web: { includeDomains: ["sec.gov"], publishedAfter: "2026-01-01" } },
+      include_related: 2,
+      sources: {
+        data: { max_rows: 50 },
+        web: { include_domains: ["sec.gov"], highlights: true, published_after: new Date("2026-01-01") },
+      },
     });
     await runTool(t, { query: "x" });
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
+    expect(body.include_related).toBe(2);
+    expect(body.sources.data.max_rows).toBe(50);
     expect(body.sources.web.include_domains).toEqual(["sec.gov"]);
+    expect(body.sources.web.highlights).toBe(true);
     expect(body.sources.web.published_after).toBe("2026-01-01");
-  });
-
-  // Constructing the tool must throw, not calling it. An `execute` error goes to
-  // the model, which can neither supply node ids nor edit the config, so it would
-  // retry the same contradiction until the step limit.
-  it("throws when strict has no nodeIds, at construction and before any fetch", () => {
-    const fetchMock = stubFetch(200, OK);
-    expect(() => takoSearch({ apiKey: "key", sources: { data: { strict: true } } })).toThrow(
-      /strict requires a non-empty nodeIds/,
-    );
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("throws at construction through the deprecated tako alias too", () => {
-    expect(() => takoSearch({ apiKey: "key", sources: { tako: { strict: true } } })).toThrow(
-      /strict requires a non-empty nodeIds/,
-    );
-  });
-
-  it("builds normally when strict comes with nodeIds", async () => {
-    const fetchMock = stubFetch(200, OK);
-    const t = takoSearch({ apiKey: "key", sources: { data: { strict: true, nodeIds: ["mt::a::b"] } } });
-    await runTool(t, { query: "x" });
-    const init = fetchMock.mock.calls[0][1] as RequestInit;
-    expect(JSON.parse(init.body as string).sources.data).toEqual({
-      strict: true,
-      node_ids: ["mt::a::b"],
-    });
   });
 
   it("falls back to TAKO_API_KEY env and throws clearly when unset", async () => {
