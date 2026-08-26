@@ -48,9 +48,16 @@ describe("config types are tako-sdk's request types", () => {
     expectTypeOf<Exclude<keyof ContentsRequest, "url">>().toMatchTypeOf<keyof TakoContentsConfig>();
   });
 
-  it("gives the answer tool output_schema, and keeps a search config assignable to it", () => {
+  it("gives the answer tool output_schema, and keeps every search key reachable through it", () => {
     expectTypeOf<TakoAnswerConfig["output_schema"]>().toEqualTypeOf<AnswerRequest["output_schema"]>();
-    expectTypeOf<TakoRetrievalConfig>().toMatchTypeOf<TakoAnswerConfig>();
+    // README promises one config object builds both tools. Assignability cannot
+    // carry that promise: every key on both sides is optional, so
+    // `toMatchTypeOf<TakoAnswerConfig>` has nothing to satisfy and stays green
+    // however far the two requests diverge. `AnswerRequest` does not extend
+    // `SearchRequest`, so they can. Pin the key sets instead — a search key the
+    // answer endpoint drops would type-check on the shared object and then
+    // vanish in `AnswerRequestToJSON`, which is the promise being broken.
+    expectTypeOf<Exclude<keyof SearchRequest, keyof AnswerRequest>>().toEqualTypeOf<never>();
     // @ts-expect-error output_schema is an answer option; search has no synthesis to shape.
     const search: TakoRetrievalConfig = { output_schema: { type: "object" } };
     void search;
