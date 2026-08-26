@@ -6,18 +6,16 @@ export type {
   // Config
   TakoBaseConfig,
   TakoRetrievalConfig,
+  TakoAnswerConfig,
   TakoContentsConfig,
-  TakoSourceOptions,
-  TakoCardSourceOptions,
+  TakoSources,
   TakoDataSourceOptions,
   TakoWebSourceOptions,
-  TakoGeoLocation,
   // Enums / unions
   TakoSearchEffort,
   TakoContentsMode,
   TakoContentFormat,
   TakoSourceIndex,
-  TakoCardSourceIndex,
   TakoKnowledgeCardRelevance,
   TakoGraphNodeType,
   TakoDatasetColumnType,
@@ -38,7 +36,6 @@ export type {
   // Cards and web results
   TakoCard,
   TakoCardSource,
-  TakoKnowledgeCardSource,
   TakoKnowledgeCardMethodology,
   TakoCardNode,
   TakoMetricDefinition,
