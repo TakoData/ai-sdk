@@ -121,16 +121,25 @@ for (const [name, factory] of [
 // built module ran rather than a stub resolving to something else.
 assert.notEqual(
   takoContents({ apiKey: "k" }).description,
-  takoContents({ apiKey: "k", quoteOnly: true }).description,
+  takoContents({ apiKey: "k", quote_only: true }).description,
   "takoContents description did not vary with config",
 );
 
-// A config the package rejects must still be rejected from the tarball.
-assert.throws(
-  () => takoSearch({ apiKey: "k", sources: { data: { strict: true } } }),
-  /strict requires a non-empty nodeIds/,
-  "the strict/nodeIds guard did not survive the build",
-);
+// The builder must strip the connection fields. A tarball that leaked the key
+// into the request body would pass every other check here.
+{
+  const seen = [];
+  globalThis.fetch = async (url, init) => {
+    seen.push(JSON.parse(init.body));
+    return new Response(JSON.stringify({ request_id: "r" }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  };
+  const tool = takoSearch({ apiKey: "leak-me", baseUrl: "https://e.com", effort: "deep" });
+  await tool.execute({ query: "q" }, { toolCallId: "t", messages: [] });
+  assert.deepEqual(seen, [{ query: "q", effort: "deep" }], "apiKey or baseUrl reached the request body");
+}
 
 console.log("  runtime import and tool construction OK");
 `,
@@ -167,13 +176,13 @@ console.log("  runtime import and tool construction OK");
   );
   writeFileSync(
     join(scratch, "check.ts"),
-    `import { takoSearch, takoContents } from "${pkg.name}";
+    `import { takoSearch, takoAnswer, takoContents } from "${pkg.name}";
 import type {
   TakoRetrievalConfig,
+  TakoAnswerConfig,
   TakoContentsConfig,
   TakoDataSourceOptions,
   TakoWebSourceOptions,
-  TakoGeoLocation,
   TakoWebCategory,
   TakoSearchResult,
 } from "${pkg.name}";
@@ -181,17 +190,26 @@ import type {
 // Exercise the option surface, so a type that failed to ship fails the compile.
 const retrieval: TakoRetrievalConfig = {
   effort: "deep",
-  location: { latitude: 1, longitude: 2 } satisfies TakoGeoLocation,
+  location: { latitude: 1, longitude: 2 },
+  include_related: 2,
   sources: {
-    data: { nodeIds: ["a"], strict: true, contentFormat: "json_compact" } satisfies TakoDataSourceOptions,
-    web: { category: "news" satisfies TakoWebCategory, includeDomains: ["e.com"] } satisfies TakoWebSourceOptions,
+    data: { content_format: "json_compact", max_rows: 20 } satisfies TakoDataSourceOptions,
+    web: { category: "news" satisfies TakoWebCategory, include_domains: ["e.com"], highlights: true } satisfies TakoWebSourceOptions,
   },
 };
-const contents: TakoContentsConfig = { mode: "inline", maxRows: 100, quoteOnly: true };
+const answer: TakoAnswerConfig = { ...retrieval, output_schema: { type: "object" } };
+const contents: TakoContentsConfig = { mode: "inline", max_rows: 100, quote_only: true };
+
+// The omitted keys must be rejected by the shipped .d.ts, not only in-repo.
+// @ts-expect-error strict is omitted from TakoDataSourceOptions
+const rejected: TakoRetrievalConfig = { sources: { data: { strict: true } } };
+void rejected;
 
 const s = takoSearch(retrieval);
+const a = takoAnswer(answer);
 const c = takoContents(contents);
 void s;
+void a;
 void c;
 
 // The result type must be reachable and shaped as documented.
