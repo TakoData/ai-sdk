@@ -30,7 +30,7 @@ describe("types", () => {
       data_freshness: { data_as_of: "2026-01-31", last_updated: "2026-02-14" },
       content: { content_format: "csv", cost: 0 },
     };
-    const web: TakoWebResult = { title: "W", url: "https://e.com", citation_number: 1 };
+    const web: TakoWebResult = { title: "W", url: "https://e.com", source_name: "e.com" };
     const usage: TakoUsage = { total_cost_usd: 0.02, compute: { cost_usd: 0.02 } };
     const res: TakoSearchResult = { cards: [card], web_results: [web], request_id: "r", usage };
     expect(res.cards[0].card_id).toBe("c1");

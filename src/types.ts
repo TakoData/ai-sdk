@@ -1,31 +1,27 @@
-// Types mirror Tako's published OpenAPI document. `tests/contract/` validates
-// them against a vendored copy of that spec and against `tako-sdk`, Tako's
-// official generated client, so drift fails CI. Refresh with `pnpm spec:refresh`.
+// Wire types come from `tako-sdk`, Tako's generated client, and are re-exported
+// here under the names this package has always used. Only the developer-facing
+// config and the normalized tool results are declared in this file.
+import type * as sdk from "tako-sdk";
 
 // ----- Enums / unions -----
 
-export type TakoSearchEffort = "fast" | "instant" | "deep";
-export type TakoContentsMode = "url" | "inline";
-
+export type TakoSearchEffort = sdk.SearchEffortLevel;
+export type TakoContentsMode = sdk.ContentsDeliveryMode;
 /** Serialization of tabular (Tako card) data. Web text carries no format. */
-export type TakoContentFormat = "csv" | "json_records" | "json_compact";
-
+export type TakoContentFormat = sdk.ContentsFormat;
 /** Public source taxonomy for the card surfaces. */
-export type TakoSourceIndex = "data" | "web";
-
+export type TakoSourceIndex = sdk.TakoSourceIndex;
 /**
  * @deprecated Renamed to {@link TakoSourceIndex}, and the value set collapsed:
  * 2.x had `"tako" | "web" | "connected_data" | "tako_deep_v2"`, this resolves to
  * `"data" | "web"`. Comparisons against the removed values no longer compile.
  */
 export type TakoCardSourceIndex = TakoSourceIndex;
-
-export type TakoKnowledgeCardRelevance = "High" | "Medium" | "Low";
-export type TakoGraphNodeType = "metric" | "entity";
-export type TakoDatasetColumnType = "string" | "number" | "boolean" | "date" | "datetime";
-
+export type TakoKnowledgeCardRelevance = sdk.KnowledgeCardRelevance;
+export type TakoGraphNodeType = sdk.GraphNodeType;
+export type TakoDatasetColumnType = sdk.TakoDatasetColumnType;
 /** Web result category. Only "news" filters today; the others are accepted and inert. */
-export type TakoWebCategory = "news" | "sports" | "finance";
+export type TakoWebCategory = sdk.WebCategory;
 
 // ----- Config (developer-facing, camelCase) -----
 
@@ -158,257 +154,70 @@ export interface TakoContentsConfig extends TakoBaseConfig {
 
 // ----- Usage / billing -----
 
-export interface TakoUsageCompute {
-  /** USD cost of running the operation. */
-  cost_usd: number;
-}
-
-export interface TakoUsageData {
-  /** USD cost of the inline data delivered in the response. */
-  cost_usd: number;
-  /** Number of billed data units (datasets) in the response. */
-  datasets: number;
-}
-
+export type TakoUsageCompute = sdk.UsageCompute;
+export type TakoUsageData = sdk.UsageData;
 /**
- * Usage for one metered request. `total_cost_usd` always equals the sum of
- * whichever breakdown components are present.
- *
- * The spec defines this as the successor to the removed `contents_total_cost`,
- * but as of 2026-08 the API does not populate it on search, answer or contents
- * (verified live across plain, deep and include_contents calls). Treat it as
- * genuinely optional. For per-item pricing today, read `TakoResultContent.cost`
- * and `TakoResultContent.export_pricing`, which are populated.
+ * Usage for one metered request. As of 2026-08 the API does not populate it on
+ * search, answer or contents. For per-item pricing today, read
+ * `TakoResultContent.cost` and `TakoResultContent.export_pricing`.
  */
-export interface TakoUsage {
-  /** Total quoted USD cost of this request. */
-  total_cost_usd: number;
-  /** Compute breakdown. Absent on surfaces with no compute step (contents). */
-  compute?: TakoUsageCompute | null;
-  /** Inline-data breakdown. Present only when billable inline data was emitted. */
-  data?: TakoUsageData | null;
-}
+export type TakoUsage = sdk.Usage;
 
 // ----- Content payloads -----
 
-export interface TakoDatasetColumn {
-  name: string;
-  type: TakoDatasetColumnType;
-  /** Structured unit, e.g. "USD billions", "%". Null when unitless. */
-  unit?: string | null;
-}
-
-export interface TakoDatasetSource {
-  /** Human-readable source name, e.g. "FRED". */
-  name: string;
-  index?: TakoSourceIndex;
-}
-
-export type TakoDatasetCell = string | number | boolean | null;
-
-/** Exact retrieved rows as positional arrays in `columns` order. */
-export interface TakoDataset {
-  columns: TakoDatasetColumn[];
-  rows: TakoDatasetCell[][];
-  total_rows: number;
-  truncated: boolean;
-  /** Source URL the dataset was derived from. */
-  ref: string;
-  sources: TakoDatasetSource[];
-  provenance?: "query" | "web_extraction";
-}
-
+export type TakoDatasetColumn = sdk.TakoDatasetColumn;
+export type TakoDatasetSource = sdk.TakoDatasetSource;
+export type TakoDatasetCell = sdk.TakoDatasetCell;
+export type TakoDataset = sdk.TakoDataset;
+export type TakoExportPricing = sdk.ExportPricing;
+export type TakoColumnDescriptor = sdk.ColumnDescriptor;
 /**
- * Rate card for a card export, so cost can be computed before fetching:
- * `baseline_usd + row_cpm_usd * max(0, rows - free_rows) / 1000`.
+ * Describes the downloadable content behind a result. `content_format` is
+ * optional as well as nullable — web text may arrive as `null` or an absent key.
+ * Test it loosely (`content_format == null`), never with `=== null`.
  */
-export interface TakoExportPricing {
-  baseline_usd: number;
-  row_cpm_usd: number;
-  free_rows: number;
-  max_rows_ceiling: number;
-}
-
-/** Per-column metadata; entry i describes column i. */
-export interface TakoColumnDescriptor {
-  name?: string | null;
-  metric?: string | null;
-  entity?: string | null;
-  unit?: string | null;
-  dtype?: TakoDatasetColumnType | null;
-}
-
-/**
- * Describes the downloadable content behind a result.
- *
- * Exactly one payload group is populated once contents are delivered: `data`
- * (CSV or web text), `records` (verbose JSON), `dataset` (compact), or
- * `url` + `expires_at` (presigned download). When every payload field is unset
- * this is just a price quote.
- *
- * `content_format` distinguishes a web page's extracted text from a card's
- * tabular data, but it is optional as well as nullable — web text may arrive as
- * either `null` or an absent key. Test it loosely (`content_format == null`),
- * never with `=== null`.
- */
-export interface TakoResultContent {
-  content_format?: TakoContentFormat | null;
-  /** USD price of this item. On search/answer cards this is a prospective /contents quote. */
-  cost?: number;
-  /** Inline payload as text: CSV card data, or a web page's extracted text. */
-  data?: string | null;
-  /** Inline card data as row objects keyed by column name ("json_records"). */
-  records?: Record<string, TakoDatasetCell>[] | null;
-  /** Inline card data as a compact dataset ("json_compact"). */
-  dataset?: TakoDataset | null;
-  /** Presigned download URL ("url" delivery mode). */
-  url?: string | null;
-  expires_at?: string | null;
-  /** True total rows in the card's data, independent of how many were returned. */
-  total_rows?: number | null;
-  truncated?: boolean;
-  export_pricing?: TakoExportPricing | null;
-  manifest?: TakoColumnDescriptor[] | null;
-}
-
-export interface TakoContentItem extends TakoResultContent {
-  /** The originating result URL from the request. */
-  source_url: string;
-}
+export type TakoResultContent = sdk.ResultContent;
+export type TakoContentItem = sdk.ContentItem;
 
 // ----- Cards and web results -----
 
-export interface TakoCardSource {
-  source_name?: string | null;
-  source_description?: string | null;
-  source_index: TakoSourceIndex;
-  url?: string | null;
-  /** Raw excerpts from the source page. Present for web sources; null for data. */
-  source_text?: string | null;
-}
-
+export type TakoCardSource = sdk.TakoCardSource;
 /** @deprecated Renamed to {@link TakoCardSource}. */
 export type TakoKnowledgeCardSource = TakoCardSource;
-
-/** Both keys are always present on the wire, though either value may be null. */
-export interface TakoKnowledgeCardMethodology {
-  methodology_name: string | null;
-  methodology_description: string | null;
-}
-
-/** Graph node (entity or metric) behind a card. */
-export interface TakoCardNode {
-  /** Opaque public id (`ent::…` / `mt::…`). Not durable across graph rebuilds. */
-  id: string;
-  type: TakoGraphNodeType;
-  name: string;
-  description?: string | null;
-}
-
-export interface TakoMetricDefinition {
-  name: string;
-  definition: string;
-}
-
-/** Freshness dates for a card's data. */
-export interface TakoDataFreshness {
-  /** Coverage date of the data. */
-  data_as_of?: string | null;
-  /** Date the data was last refreshed. */
-  last_updated?: string | null;
-}
-
-export interface TakoCard {
-  card_id?: string | null;
-  title?: string | null;
-  description?: string | null;
-  semantic_description?: string | null;
-  webpage_url?: string | null;
-  image_url?: string | null;
-  embed_url?: string | null;
-  sources?: TakoCardSource[] | null;
-  methodologies?: TakoKnowledgeCardMethodology[] | null;
-  source_indexes?: TakoSourceIndex[] | null;
-  card_type?: string | null;
-  relevance?: TakoKnowledgeCardRelevance | null;
-  content?: TakoResultContent | null;
-  /**
-   * Whether /contents can download this card's data. `false` means the export is
-   * unavailable — don't call takoContents on it. `true` is eligible but not
-   * guaranteed (a 403 is still possible), so fall back to the inline preview.
-   */
-  exportable?: boolean;
-  /** Relevance on a 1.0–5.0 scale. Only populated for entitled accounts. */
-  relevance_score?: number | null;
-  /** Graph nodes behind this card. Absent for web-only cards. */
-  nodes?: TakoCardNode[] | null;
-  metric_definitions?: TakoMetricDefinition[] | null;
-  data_freshness?: TakoDataFreshness | null;
-}
-
-export interface TakoWebResult {
-  title: string;
-  url: string;
-  /** Excerpt(s) from the page that matched the query. */
-  snippet?: string | null;
-  source_name?: string | null;
-  publish_date?: string | null;
-  content?: TakoResultContent | null;
-  /** 1-based citation number for inline [N] markers. Null on raw retrieval. */
-  citation_number?: number | null;
-}
+export type TakoKnowledgeCardMethodology = sdk.KnowledgeCardMethodology;
+export type TakoCardNode = sdk.TakoCardNode;
+export type TakoMetricDefinition = sdk.MetricDefinition;
+export type TakoDataFreshness = sdk.DataFreshness;
+export type TakoCard = sdk.TakoCard;
+export type TakoWebResult = sdk.WebResult;
 
 // ----- Wire responses (exactly what the API sends) -----
 
-/**
- * The raw `POST /api/v3/search` body. Only `request_id` is guaranteed — the
- * contract permits omitting the collections, though the API currently sends them
- * empty. Tools normalize either shape and return {@link TakoSearchResult}.
- */
-export interface TakoSearchResponse {
-  cards?: TakoCard[];
-  web_results?: TakoWebResult[];
-  request_id: string;
-  usage?: TakoUsage | null;
-}
-
+/** The raw `POST /api/v3/search` body. Only `request_id` is guaranteed. */
+export type TakoSearchResponse = sdk.SearchResponse;
 /** The raw `POST /api/v1/answer` body. */
-export interface TakoAnswerResponse {
-  answer: string;
-  cards?: TakoCard[];
-  web_results?: TakoWebResult[];
-  request_id: string;
-  usage?: TakoUsage | null;
-}
-
+export type TakoAnswerResponse = sdk.AnswerResponse;
 /** The raw `POST /api/v1/contents` body. */
-export interface TakoContentsResponse {
-  contents?: TakoContentItem[];
-  request_id: string;
-  usage?: TakoUsage | null;
-}
+export type TakoContentsResponse = sdk.ContentsResponse;
 
 // ----- Tool results (normalized: collections always present) -----
+//
+// Built from the response types so a field the API adds shows up here without
+// an edit; only the collections are pinned as required.
 
-export interface TakoSearchResult {
+export type TakoSearchResult = Omit<TakoSearchResponse, "cards" | "web_results"> & {
   cards: TakoCard[];
   web_results: TakoWebResult[];
-  request_id: string;
-  usage?: TakoUsage | null;
-}
+};
 
-export interface TakoAnswerResult {
+export type TakoAnswerResult = Omit<TakoAnswerResponse, "cards" | "web_results"> & {
   /** Synthesized text answer. */
   answer: string;
   /** Backing cards; cards[0] is the lead card. */
   cards: TakoCard[];
   web_results: TakoWebResult[];
-  request_id: string;
-  usage?: TakoUsage | null;
-}
+};
 
-export interface TakoContentsResult {
+export type TakoContentsResult = Omit<TakoContentsResponse, "contents"> & {
   contents: TakoContentItem[];
-  request_id: string;
-  usage?: TakoUsage | null;
-}
+};
