@@ -18,6 +18,7 @@ jobs:
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm check:sdk-lag
       # Everything above tests src/. These two test the artifact a consumer
       # installs, which is where a missing file, an unresolvable `exports` map, or
       # a devDependency imported at run time shows up.

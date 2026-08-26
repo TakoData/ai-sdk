@@ -24,7 +24,8 @@
     "test:live": "vitest run --config vitest.live.config.ts",
     "test:package": "node scripts/verify-package.mjs",
     "lint:package": "npm run --silent build && npx -y publint@latest --strict --pack npm && npx -y @arethetypeswrong/cli@latest --pack . --ignore-rules cjs-resolves-to-esm",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "check:sdk-lag": "tsx scripts/check-sdk-lag.ts"
   },
   "keywords": [
     "tako",

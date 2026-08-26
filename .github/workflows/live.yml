@@ -5,10 +5,9 @@ name: live
 on:
   workflow_dispatch:
   schedule:
-    # Mondays, 13:00 UTC. The point of a schedule is to notice the API moving
-    # under a published version: the contract suite reads a pinned snapshot and
-    # only moves when somebody runs `pnpm spec:refresh`, so nothing else fails
-    # when Tako changes and this repo does not.
+    # Mondays, 13:00 UTC. Two jobs: smoke the tools against the real API, and
+    # run check:sdk-lag so a tako-sdk major that no PR has picked up still fails
+    # somewhere visible.
     - cron: "0 13 * * 1"
 
 # One run at a time. Concurrent runs on the same key hit Tako's throttle and
@@ -30,6 +29,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm check:sdk-lag
       - run: pnpm test:live
         env:
           TAKO_API_KEY: ${{ secrets.TAKO_API_KEY }}
