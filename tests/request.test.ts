@@ -1,139 +1,82 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
-  ContentsRequestToJSON,
-  DataSourceSettingsToJSON,
-  OutputSettingsToJSON,
+  AnswerRequestToJSON,
   SearchRequestToJSON,
-  WebSourceSettingsToJSON,
+  type AnswerRequest,
+  type ContentsRequest,
   type SearchRequest,
-  type WebSourceSettings,
 } from "tako-sdk";
-import {
-  buildContentsRequestBody,
-  buildDataSourceSettings,
-  buildOutputSettings,
-  buildSearchRequestBody,
-  buildWebSourceSettings,
-} from "../src/request";
+import { buildAnswerRequestBody, buildContentsRequestBody, buildSearchRequestBody } from "../src/request";
 
-describe("request builders produce tako-sdk request types", () => {
-  it("returns the generated SearchRequest type with only the keys the caller set", () => {
+// The builders do two things: drop this package's connection fields, and add
+// the field the model supplies. Anything else — a rename, a default, a range
+// check — would be a second copy of the API's contract, and the point of 4.0
+// is that there is only one.
+
+describe("request builders", () => {
+  it("send only query when the config is empty", () => {
     const body = buildSearchRequestBody({}, "nvidia revenue");
     expectTypeOf(body).toEqualTypeOf<SearchRequest>();
-    expect(Object.keys(body)).toEqual(["query"]);
+    expect(body).toEqual({ query: "nvidia revenue" });
   });
 
-  it("converts ISO date strings to Date for the generated date fields, and back on the wire", () => {
-    const web: WebSourceSettings = buildWebSourceSettings({ publishedAfter: "2026-01-01", publishedBefore: "2026-12-31" });
-    expect(web.published_after).toBeInstanceOf(Date);
-    const wire = SearchRequestToJSON(buildSearchRequestBody({ sources: { web: { publishedAfter: "2026-01-01" } } }, "q"));
-    expect(wire.sources?.web?.published_after).toBe("2026-01-01");
-  });
-
-  it("rejects a date that is not YYYY-MM-DD", () => {
-    expect(() => buildWebSourceSettings({ publishedAfter: "yesterday" })).toThrow(
-      /publishedAfter must be an ISO date "YYYY-MM-DD"/,
-    );
-  });
-
-  // `new Date("2026-02-31")` does not fail, it rolls forward to 2026-03-03.
-  // Without the round-trip check the request filters from a date the caller
-  // never wrote, and nothing anywhere says so.
-  it("rejects a well-formed date that is not on the calendar", () => {
-    for (const bad of ["2026-02-31", "2026-02-30", "2026-04-31"]) {
-      expect(() => buildWebSourceSettings({ publishedBefore: bad })).toThrow(
-        /publishedBefore is not a real calendar date/,
-      );
-    }
-    expect(buildWebSourceSettings({ publishedBefore: "2028-02-29" }).published_before).toBeInstanceOf(Date);
-  });
-});
-
-// A generated `*ToJSON` returns an object literal holding every key its model
-// declares, so the request schema is enumerable at run time and needs no
-// vendored spec. This is what catches a Tako option this package never exposed:
-// `tako-sdk` regenerates, a name appears here that no builder writes, and the
-// bump's own PR goes red instead of the option going unnoticed. The replaced
-// contract suite read a pinned `openapi.yaml`, so it could only ever fail on a
-// regression in this repo, never on a change Tako shipped.
-const SECTIONS = [
-  {
-    name: "WebSourceSettings",
-    declared: Object.keys(WebSourceSettingsToJSON({})),
-    built: buildWebSourceSettings({
-      count: 1,
-      includeContents: true,
-      category: "news",
-      includeDomains: ["a.com"],
-      excludeDomains: ["b.com"],
-      snippetMaxChars: 1,
-      articleContentMaxChars: 1,
-      publishedAfter: "2026-01-01",
-      publishedBefore: "2026-01-02",
-    }) as Record<string, unknown>,
-  },
-  {
-    name: "DataSourceSettings",
-    declared: Object.keys(DataSourceSettingsToJSON({})),
-    built: buildDataSourceSettings({
-      count: 1,
-      includeContents: true,
-      mode: "inline",
-      contentFormat: "csv",
-      nodeIds: ["ent::x"],
-      strict: true,
-    }) as Record<string, unknown>,
-  },
-  {
-    name: "OutputSettings",
-    declared: Object.keys(OutputSettingsToJSON({})),
-    built: buildOutputSettings({ imageDarkMode: true, forceRefresh: true }) as Record<string, unknown>,
-  },
-  {
-    name: "SearchRequest",
-    declared: Object.keys(SearchRequestToJSON({ query: "q" })),
-    built: buildSearchRequestBody(
+  it("pass every config key through unchanged, and never apiKey or baseUrl", () => {
+    const body = buildSearchRequestBody(
       {
+        apiKey: "k",
+        baseUrl: "https://e.com",
         effort: "deep",
-        countryCode: "US",
-        locale: "en-US",
-        timezone: "UTC",
-        location: { latitude: 1, longitude: 2 },
-        sources: { web: {} },
-        outputSettings: { forceRefresh: true },
+        include_related: 2,
+        sources: {
+          data: { count: 10, max_rows: 50 },
+          web: { highlights: true, published_after: new Date("2026-01-01") },
+        },
       },
       "q",
-    ) as unknown as Record<string, unknown>,
-  },
-  {
-    name: "ContentsRequest",
-    declared: Object.keys(ContentsRequestToJSON({ url: "https://tako.com/card/x", mode: "url" })),
-    built: buildContentsRequestBody("https://tako.com/card/x", {
+    );
+    expect(body).toEqual({
+      query: "q",
+      effort: "deep",
+      include_related: 2,
+      sources: {
+        data: { count: 10, max_rows: 50 },
+        web: { highlights: true, published_after: new Date("2026-01-01") },
+      },
+    });
+    // The generated serializer writes the date as YYYY-MM-DD. A Date built with
+    // the ISO-string constructor is UTC midnight, so it round-trips exactly.
+    expect(SearchRequestToJSON(body).sources?.web?.published_after).toBe("2026-01-01");
+  });
+
+  it("give the answer builder output_schema", () => {
+    const body = buildAnswerRequestBody(
+      { apiKey: "k", baseUrl: "https://e.com", effort: "deep", output_schema: { type: "object" } },
+      "q",
+    );
+    expectTypeOf(body).toEqualTypeOf<AnswerRequest>();
+    expect(body).toEqual({ query: "q", effort: "deep", output_schema: { type: "object" } });
+    expect(AnswerRequestToJSON(body).output_schema).toEqual({ type: "object" });
+  });
+
+  it("send only url when the contents config is empty, leaving mode to the API", () => {
+    const body = buildContentsRequestBody("https://tako.com/card/x", { apiKey: "k", baseUrl: "https://e.com" });
+    expectTypeOf(body).toEqualTypeOf<ContentsRequest>();
+    expect(body).toEqual({ url: "https://tako.com/card/x" });
+  });
+
+  it("pass contents options through", () => {
+    const body = buildContentsRequestBody("https://tako.com/card/x", {
       mode: "inline",
-      contentFormat: "csv",
-      maxRows: 1,
-      maxChars: 1,
-      quoteOnly: true,
-    }) as unknown as Record<string, unknown>,
-  },
-];
-
-// Options `tako-sdk` declares that this package has not exposed yet. A name
-// here is a deliberate deferral, not an exemption: the test asserts the gap set
-// EQUALS this list, so a newly declared option fails until someone either
-// exposes it or records it here on purpose.
-//
-// `include_related` is the one worth reading twice. `SearchResponse.related`
-// already decodes, so a caller can read related cards but cannot ask for them.
-const NOT_EXPOSED: Record<string, string[]> = {
-  WebSourceSettings: ["highlights"],
-  DataSourceSettings: ["max_rows"],
-  SearchRequest: ["include_related"],
-};
-
-describe("request builders cover the generated request schema", () => {
-  it.each(SECTIONS)("$name exposes every option tako-sdk declares", ({ name, declared, built }) => {
-    const gaps = declared.filter((key) => !(key in built));
-    expect(gaps.sort()).toEqual([...(NOT_EXPOSED[name] ?? [])].sort());
+      content_format: "csv",
+      max_rows: 100,
+      quote_only: true,
+    });
+    expect(body).toEqual({
+      url: "https://tako.com/card/x",
+      mode: "inline",
+      content_format: "csv",
+      max_rows: 100,
+      quote_only: true,
+    });
   });
 });

@@ -10,7 +10,7 @@
  * normalized result.
  *
  * The two rules of the live suite still hold. Assert contract, never content.
- * Never trigger a billed export — the contents check quotes with `quoteOnly`,
+ * Never trigger a billed export — the contents check quotes with `quote_only`,
  * which prices an export for free.
  */
 import { describe, expect, it } from "vitest";
@@ -62,7 +62,7 @@ describe.skipIf(!KEY)("live: each tool executes and returns a normalized result"
       const url = found.cards.find((c) => c.exportable && c.webpage_url)?.webpage_url;
       if (!url) return; // Nothing exportable came back; not this test's failure.
 
-      const res = (await runTool(takoContents({ ...config, quoteOnly: true }), {
+      const res = (await runTool(takoContents({ ...config, quote_only: true }), {
         url,
       })) as TakoContentsResult;
       expect(Array.isArray(res.contents)).toBe(true);

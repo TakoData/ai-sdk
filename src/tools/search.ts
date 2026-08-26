@@ -1,16 +1,13 @@
 import { tool, type Tool } from "ai";
 import { z } from "zod";
 import { callTako, lazyTakoClient } from "../client";
-import { assertValidRetrievalConfig, buildSearchRequestBody, normalizeSearchResult } from "../request";
+import { buildSearchRequestBody, normalizeSearchResult } from "../request";
 import type { TakoRetrievalConfig, TakoSearchResult } from "../types";
 
 /** Tako fast-pipeline search: returns Tako cards + web results, no LLM synthesis. */
 export function takoSearch(
   config: TakoRetrievalConfig = {},
 ): Tool<{ query: string }, TakoSearchResult> {
-  // Fail here, not in `execute`. A contradictory config is a wiring mistake, and
-  // the model that reads an `execute` error cannot fix one.
-  assertValidRetrievalConfig(config);
   const client = lazyTakoClient(config);
   return tool({
     description:

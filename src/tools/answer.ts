@@ -1,8 +1,8 @@
 import { tool, type Tool } from "ai";
 import { z } from "zod";
 import { callTako, lazyTakoClient } from "../client";
-import { assertValidRetrievalConfig, buildSearchRequestBody, normalizeAnswerResult } from "../request";
-import type { TakoRetrievalConfig, TakoAnswerResult } from "../types";
+import { buildAnswerRequestBody, normalizeAnswerResult } from "../request";
+import type { TakoAnswerConfig, TakoAnswerResult } from "../types";
 
 /**
  * Tako answer: fast-pipeline retrieval plus an LLM-synthesized answer grounded in the results.
@@ -11,11 +11,18 @@ import type { TakoRetrievalConfig, TakoAnswerResult } from "../types";
  * the chart `image_url`/`embed_url` you can surface in your own UI.
  */
 export function takoAnswer(
-  config: TakoRetrievalConfig = {},
+  config: TakoAnswerConfig = {},
 ): Tool<{ query: string }, TakoAnswerResult> {
-  // Fail here, not in `execute`. A contradictory config is a wiring mistake, and
-  // the model that reads an `execute` error cannot fix one.
-  assertValidRetrievalConfig(config);
+  // Fail here, not in `execute`. The API returns 400 for this pair on every
+  // call, and the model that reads an `execute` error can change neither field,
+  // so it retries the same contradiction until the step limit. This is a
+  // contradiction between two fields, not a numeric bound the API should own.
+  if (config.effort === "instant" && config.output_schema) {
+    throw new Error(
+      'output_schema requires effort "fast" or "deep"; Tako returns 400 on "instant". ' +
+        "Drop output_schema, or change effort.",
+    );
+  }
   const client = lazyTakoClient(config);
   return tool({
     description:
@@ -30,7 +37,13 @@ export function takoAnswer(
       'exportable: false, ask here and name the period you need (e.g. "...for ' +
       'FY2023-FY2025").\n\n' +
       "One entity + one metric per question. Traffic data is keyed by domain: " +
-      '"openai.com monthly visits", not "OpenAI website visits".',
+      '"openai.com monthly visits", not "OpenAI website visits".' +
+      // Say this only when output_schema is set. Otherwise the model reads about
+      // a field that never arrives, and its cheapest recovery is to call again.
+      (config.output_schema
+        ? "\n\nThe response also carries structured_output, filled from the same evidence as " +
+          "the answer. Read the figures from there; the prose is for the user."
+        : ""),
     inputSchema: z.object({
       query: z
         .string()
@@ -41,7 +54,7 @@ export function takoAnswer(
     execute: async ({ query }: { query: string }) => {
       const tako = client();
       return normalizeAnswerResult(
-        await callTako("answer", () => tako.answer(buildSearchRequestBody(config, query))),
+        await callTako("answer", () => tako.answer(buildAnswerRequestBody(config, query))),
       );
     },
   });

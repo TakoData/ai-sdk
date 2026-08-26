@@ -55,87 +55,68 @@ const tools = {
 
 ## Configuration
 
-`takoSearch` and `takoAnswer` take the same config:
+A tool's config is the API request body for its endpoint, minus the field the model supplies, plus `apiKey` and `baseUrl`. Keys are the API's own names, exactly as [`tako-sdk`](https://www.npmjs.com/package/tako-sdk) declares them, so every option in the [API reference](https://docs.tako.com) works here without a release of this package.
+
+| Tool | Config type | Is the request body of | Minus |
+| --- | --- | --- | --- |
+| `takoSearch` | `TakoRetrievalConfig` | `POST /api/v3/search` | `query` |
+| `takoAnswer` | `TakoAnswerConfig` | `POST /api/v1/answer` | `query` |
+| `takoContents` | `TakoContentsConfig` | `POST /api/v1/contents` | `url` |
+
+Every field is optional. Omit one and the API's default applies; this package restates none of them. The model supplies only `{ query }` or `{ url }` per call.
+
+Three `sources.data` keys aren't exposed, because you can't use them correctly from here: `mode` (the API documents it as having no effect on Tako cards), and `node_ids` with `strict` (they take graph ids from endpoints this package doesn't wrap). Call the API through `tako-sdk` directly if you need them.
+
+### Examples
+
+Deep search over Tako's data only, ten cards, with the rows inlined as typed columns:
 
 ```typescript
 takoSearch({
-  apiKey: 'your_api_key',      // optional; defaults to TAKO_API_KEY
-  baseUrl: 'https://tako.com', // optional; override for staging
-  effort: 'fast',              // 'fast' (default) | 'instant' | 'deep'
-  sources: {                   // a source is searched iff its key is present; omit to search both
-    data: { count: 5, includeContents: false }, // legacy alias: tako
-    web: { count: 5, includeContents: false },
-  },
-  countryCode: 'US',           // default 'US'
-  locale: 'en-US',             // default 'en-US'
-  timezone: 'America/New_York',// optional IANA timezone
-  outputSettings: {
-    imageDarkMode: false,
-    forceRefresh: false,       // instant mode only
-  },
+  effort: 'deep',
+  sources: { data: { count: 10, include_contents: true, content_format: 'json_compact' } },
 });
 ```
 
-`takoContents` takes:
+News from the last week. Build dates with the ISO-string constructor: `new Date('2026-08-19')` is UTC midnight and serializes as that day everywhere; `new Date(2026, 7, 19)` is local midnight and serializes as the day before in any UTC+ timezone.
+
+Check that your date parsed before you pass it. `new Date()` returns an `Invalid Date` for a string it can't read, and that fails during serialization, so the tool call rejects with `Failed to search with Tako: Invalid time value` — a message that names neither the field nor the value, and reaches the model rather than you. The request never leaves the process.
 
 ```typescript
-takoContents({
-  apiKey: 'your_api_key',
-  baseUrl: 'https://tako.com',
-  mode: 'url',                 // 'url' (default) → presigned link; 'inline' → content in the response
+takoSearch({
+  sources: { web: { category: 'news', published_after: new Date('2026-08-19'), count: 5 } },
 });
 ```
 
-The LLM supplies only the dynamic input: `{ query }` for `takoSearch`/`takoAnswer`, and `{ url }` (a card's `webpage_url` or a web result's `url`) for `takoContents`.
+An answer shaped by a JSON Schema. Tako fills it from the same evidence as `answer` and returns it as `structured_output`; a nullable type is how you let it say "no evidence" instead of inventing a zero.
 
-### Search and answer options
+```typescript
+takoAnswer({
+  output_schema: {
+    type: 'object',
+    properties: {
+      revenue_usd: { type: ['number', 'null'], description: 'Latest annual revenue in USD' },
+      fiscal_year: { type: ['integer', 'null'] },
+    },
+    required: ['revenue_usd', 'fiscal_year'],
+    additionalProperties: false,
+  },
+});
+```
 
-Both tools take the same config. Every field is optional; omit one and the API's default applies.
+A `TakoRetrievalConfig` is also a valid `TakoAnswerConfig`, so one object can build both tools.
 
-| Option | Type | Notes |
-| --- | --- | --- |
-| `effort` | `"fast" \| "instant" \| "deep"` | Default `"fast"`. |
-| `countryCode` / `locale` / `timezone` | `string` | Default `"US"` / `"en-US"`. |
-| `location` | `{ latitude, longitude }` | End-user coordinates. |
-| `outputSettings.imageDarkMode` | `boolean` | |
-| `outputSettings.forceRefresh` | `boolean` | Instant mode only. |
+### Contents delivery
 
-**`sources.data`** — the curated Tako source:
+Two `takoContents` options also change the description the model reads, so pick them deliberately:
 
-| Option | Type | Notes |
-| --- | --- | --- |
-| `count` | `number` | 1-20, server default 5. |
-| `includeContents` | `boolean` | Inline the card data. |
-| `contentFormat` | `"csv" \| "json_records" \| "json_compact"` | Server default `"json_compact"`. |
-| `nodeIds` | `string[]` | Pin graph nodes. Ids come from the `/v1/graph` endpoints. |
-| `strict` | `boolean` | Return only cards matching a pinned node. Requires `nodeIds`. |
-| `mode` | `"url" \| "inline"` | Server default `"inline"`. Accepted, but the API documents no effect on Tako cards. |
+- `mode: 'url'` returns a short-lived presigned download link. The description tells the model to surface the link, not parse it.
+- `mode: 'inline'` returns the rows or page text in the response. The description tells the model to read and compute over them.
+- `quote_only: true` returns the export price and no content, for free. The description tells the model to report the price and not call again expecting rows.
 
-**`sources.web`**:
+Leave `mode` unset and the API chooses — `'url'` today. This package sends no default and names none in the description; the model is told to read the response instead. Set `mode` to pin the delivery and tell the model which one to expect.
 
-| Option | Type | Notes |
-| --- | --- | --- |
-| `count` | `number` | 1-20. Server default 5 for `takoSearch`, 3 for `takoAnswer`. |
-| `includeContents` | `boolean` | Include full article text. |
-| `category` | `"news" \| "sports" \| "finance"` | Only `"news"` filters today. |
-| `includeDomains` / `excludeDomains` | `string[]` | Bare hosts, for example `"cnn.com"`. |
-| `publishedAfter` / `publishedBefore` | `string` | ISO `"YYYY-MM-DD"`. Results with no known date are kept. |
-| `snippetMaxChars` | `number` | Server default 1000. |
-| `articleContentMaxChars` | `number` | Server default 30000. |
-
-### Contents options
-
-| Option | Type | Notes |
-| --- | --- | --- |
-| `mode` | `"url" \| "inline"` | Default `"url"`. Changes the tool description the model reads. |
-| `contentFormat` | `"csv" \| "json_records" \| "json_compact"` | Server default `"csv"` on this surface. |
-| `maxRows` | `number` | Card exports only. The first 20 rows are free; **rows above that bill at the per-1000-row rate**. |
-| `maxChars` | `number` | Web page text only. Server default 1000000, the full page text. |
-| `quoteOnly` | `boolean` | Price the export without fetching it. The request is free and the payload is null. |
-
-This SDK does not check the numeric ranges. The API enforces them, so a limit Tako raises works immediately without an SDK release. Most out-of-range values return a 400.
-
-**`maxRows` is the exception, and it fails quietly.** A value above the 2,000-row ceiling is clamped, not rejected, and billing counts the rows actually returned. You get a short export, a charge for it, and no error. Check `total_rows` and `truncated` on the returned item to see what you actually got.
+`max_rows` fails quietly: a value over the 2,000-row ceiling is clamped, not rejected, and every row returned is billed. Read `total_rows` and `truncated` on the item to see what you got.
 
 ## Responses
 
@@ -176,7 +157,7 @@ Each item carries a `cost` (USD) and either a presigned `url` + `expires_at` (ur
 
 `total_rows` and `truncated` tell you whether the card held more rows than were returned.
 
-Which format you get depends on the surface. Left unset, `takoContents` returns `'csv'` for cards and no format for web pages, while a card inlined by `sources.data.includeContents` arrives as `'json_compact'` (a `dataset`). Set `contentFormat` to choose: on `takoContents` for an explicit fetch, or on `sources.data` for a card inlined by a search.
+Which format you get depends on the surface. Left unset, `takoContents` returns `'csv'` for cards and no format for web pages, while a card inlined by `sources.data.include_contents` arrives as `'json_compact'` (a `dataset`). Set `content_format` to choose: on `takoContents` for an explicit fetch, or on `sources.data` for a card inlined by a search.
 
 `content_format` is optional as well as nullable, so branch on it loosely — `content_format == null` means web text; `=== null` misses the absent case.
 
@@ -187,6 +168,7 @@ Full type definitions ship with the package.
 ```typescript
 import type {
   TakoRetrievalConfig,
+  TakoAnswerConfig,
   TakoContentsConfig,
   TakoSearchResult,
   TakoAnswerResult,

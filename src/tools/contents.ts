@@ -8,15 +8,17 @@ import type { TakoContentsConfig, TakoContentsResult } from "../types";
  * Download the data behind a result URL: a Tako card's CSV or a web page's text.
  *
  * `mode` sets the delivery, and is reflected in the tool description the model reads:
- * - `"url"` (default) — a short-lived presigned download url. Use when handing a
+ * - `"url"` — a short-lived presigned download url. Use when handing a
  *   download/embed link to a user, or for large data you won't read yourself.
  * - `"inline"` — the content in the response body, so the model can read and reason
  *   over the numbers directly.
+ *
+ * Left unset, the API chooses and the description tells the model to read the response.
+ * Set `mode` to pin the delivery and tell the model which one to expect.
  */
 export function takoContents(
   config: TakoContentsConfig = {},
 ): Tool<{ url: string }, TakoContentsResult> {
-  const mode = config.mode ?? "url";
   const client = lazyTakoClient(config);
   return tool({
     description:
@@ -24,19 +26,29 @@ export function takoContents(
       "rows; any other url (a web result's) yields the page's full extracted text. Only " +
       "call this on a url returned by a prior search or answer call, which gives you a " +
       "caption and a chart but not the rows.\n\n" +
-      // `quoteOnly` outranks `mode`: the API ignores mode on a quote and returns
+      // `quote_only` outranks `mode`: the API ignores mode on a quote and returns
       // null for url and every payload field. Describing either delivery here
       // would promise content that never arrives, and the model's cheapest
       // recovery from an unexplained null is to call again.
-      (config.quoteOnly
+      (config.quote_only
         ? "Configured for price quotes only: returns the export cost and rate card, and NO " +
           "content. The url and data fields are always null and the call is free — report " +
           "the price, and do not call again expecting rows.\n\n"
-        : mode === "inline"
+        : config.mode === "inline"
           ? "Returns the content in the response body — read and compute over the numbers " +
             "directly.\n\n"
-          : "Returns a short-lived presigned download url, NOT the data itself: surface the " +
-            "link, do not parse it or call again expecting rows.\n\n") +
+          : config.mode === "url"
+            ? "Returns a short-lived presigned download url, NOT the data itself: surface the " +
+              "link, do not parse it or call again expecting rows.\n\n"
+            // `mode` unset. The request body no longer carries a default for it,
+            // so naming one here would be a server default restated in a prompt —
+            // the rot the request builder dropped, and worse than the builder's
+            // version was: a stale request is merely stale, while a stale prompt
+            // tells the model to surface a link when inline rows arrived instead.
+            // Describe both deliveries and let the response settle it.
+            : "Delivery follows the API's own default, so read the response rather than " +
+              "assuming: if the item carries a url and no content, surface the link and do " +
+              "not parse it; if it carries content, read and compute over it directly.\n\n") +
       "Only cards whose exportable field is true can be downloaded; a non-exportable card " +
       "always returns 403 and retrying will not change that — get its figures from the " +
       "answer tool instead, naming the period you need. Web urls always work, so this is " +
