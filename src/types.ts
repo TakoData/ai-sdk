@@ -50,10 +50,18 @@ export type TakoDataSourceOptions = Omit<sdk.DataSourceSettings, "mode" | "node_
 /** The web source. Every `WebSourceSettings` key, unchanged. */
 export type TakoWebSourceOptions = sdk.WebSourceSettings;
 
-/** A source is searched iff its key is present. Omit `sources` to search data + web. */
-export interface TakoSources {
+/**
+ * Tako searches exactly the sources whose keys are present. Omit `sources` to
+ * search data and web.
+ *
+ * Derived from `sdk.Sources`, not a literal `{ data, web }` pair. Spelling the
+ * pair out is the one edit that silently breaks this file's promise: a source
+ * Tako adds would serialize on the wire and still be unreachable here, and the
+ * `keyof` pin in `config_types.test.ts` would stay green because a hand-written
+ * source set is what forced it to exclude `sources` in the first place.
+ */
+export interface TakoSources extends Omit<sdk.Sources, "data"> {
   data?: TakoDataSourceOptions;
-  web?: TakoWebSourceOptions;
 }
 
 /** Config for `takoSearch`: the `/v3/search` request body without `query`. */
@@ -66,6 +74,9 @@ export interface TakoRetrievalConfig extends TakoBaseConfig, Omit<sdk.SearchRequ
  * A superset of {@link TakoRetrievalConfig}, so one config object can build
  * both tools. Adds `output_schema`, a JSON Schema Tako fills from the same
  * evidence as `answer` and returns as `structured_output`.
+ *
+ * `output_schema` needs `effort` `"fast"` or `"deep"`. `takoAnswer` throws on
+ * the pair rather than letting every call 400.
  */
 export interface TakoAnswerConfig extends TakoBaseConfig, Omit<sdk.AnswerRequest, "query" | "sources"> {
   sources?: TakoSources;

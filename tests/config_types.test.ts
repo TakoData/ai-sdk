@@ -4,6 +4,7 @@ import type {
   ContentsRequest,
   DataSourceSettings,
   SearchRequest,
+  Sources,
   WebSourceSettings,
 } from "tako-sdk";
 import type {
@@ -11,6 +12,7 @@ import type {
   TakoContentsConfig,
   TakoDataSourceOptions,
   TakoRetrievalConfig,
+  TakoSources,
   TakoWebSourceOptions,
 } from "../src/types";
 
@@ -20,6 +22,7 @@ import type {
 // change becomes visible instead of silent.
 
 type OmittedDataKeys = Exclude<keyof DataSourceSettings, keyof TakoDataSourceOptions>;
+type UnreachableSources = Exclude<keyof Sources, keyof TakoSources>;
 
 describe("config types are tako-sdk's request types", () => {
   it("omits exactly mode, node_ids and strict from the data source, and nothing else", () => {
@@ -33,9 +36,15 @@ describe("config types are tako-sdk's request types", () => {
     expectTypeOf<TakoDataSourceOptions["max_rows"]>().toEqualTypeOf<DataSourceSettings["max_rows"]>();
     expectTypeOf<TakoWebSourceOptions["highlights"]>().toEqualTypeOf<WebSourceSettings["highlights"]>();
     expectTypeOf<TakoWebSourceOptions>().toEqualTypeOf<WebSourceSettings>();
+    // Every source Tako declares is reachable. This is the pin the `keyof
+    // SearchRequest` lines below cannot be: they compare top-level key names,
+    // and `sources` is present either way, so they say nothing about what is
+    // inside it. A hand-written `{ data, web }` pair would fail here — and only
+    // here — once Tako adds a third source.
+    expectTypeOf<UnreachableSources>().toEqualTypeOf<never>();
     // Every SDK key is a config key.
-    expectTypeOf<Exclude<keyof SearchRequest, "query" | "sources">>().toMatchTypeOf<keyof TakoRetrievalConfig>();
-    expectTypeOf<Exclude<keyof AnswerRequest, "query" | "sources">>().toMatchTypeOf<keyof TakoAnswerConfig>();
+    expectTypeOf<Exclude<keyof SearchRequest, "query">>().toMatchTypeOf<keyof TakoRetrievalConfig>();
+    expectTypeOf<Exclude<keyof AnswerRequest, "query">>().toMatchTypeOf<keyof TakoAnswerConfig>();
     expectTypeOf<Exclude<keyof ContentsRequest, "url">>().toMatchTypeOf<keyof TakoContentsConfig>();
   });
 
