@@ -125,12 +125,21 @@ assert.notEqual(
   "takoContents description did not vary with config",
 );
 
-// The builder must strip the connection fields. A tarball that leaked the key
-// into the request body would pass every other check here.
+// The connection fields must steer the request, not ride in it. Asserting the
+// body alone cannot fail: the generated serializer allowlists keys, so apiKey
+// can never reach the body through the client, with or without the builder's
+// destructure. Delete both destructure lines and a body-only check stays green.
+// tests/request.test.ts guards the builder's return value, where a leak IS
+// observable. What only a tarball proves is the routing: baseUrl reaches the
+// URL and apiKey reaches the header.
 {
   const seen = [];
   globalThis.fetch = async (url, init) => {
-    seen.push(JSON.parse(init.body));
+    seen.push({
+      url: String(url),
+      key: new Headers(init.headers).get("x-api-key"),
+      body: JSON.parse(init.body),
+    });
     return new Response(JSON.stringify({ request_id: "r" }), {
       status: 200,
       headers: { "content-type": "application/json" },
@@ -138,7 +147,11 @@ assert.notEqual(
   };
   const tool = takoSearch({ apiKey: "leak-me", baseUrl: "https://e.com", effort: "deep" });
   await tool.execute({ query: "q" }, { toolCallId: "t", messages: [] });
-  assert.deepEqual(seen, [{ query: "q", effort: "deep" }], "apiKey or baseUrl reached the request body");
+  assert.deepEqual(
+    seen,
+    [{ url: "https://e.com/api/v3/search", key: "leak-me", body: { query: "q", effort: "deep" } }],
+    "the shipped tarball did not route apiKey and baseUrl correctly",
+  );
 }
 
 console.log("  runtime import and tool construction OK");

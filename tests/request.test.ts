@@ -49,7 +49,10 @@ describe("request builders", () => {
   });
 
   it("give the answer builder output_schema", () => {
-    const body = buildAnswerRequestBody({ apiKey: "k", effort: "deep", output_schema: { type: "object" } }, "q");
+    const body = buildAnswerRequestBody(
+      { apiKey: "k", baseUrl: "https://e.com", effort: "deep", output_schema: { type: "object" } },
+      "q",
+    );
     expectTypeOf(body).toEqualTypeOf<AnswerRequest>();
     expect(body).toEqual({ query: "q", effort: "deep", output_schema: { type: "object" } });
     expect(AnswerRequestToJSON(body).output_schema).toEqual({ type: "object" });

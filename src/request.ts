@@ -24,11 +24,15 @@ export function resolveBaseUrl(config: { baseUrl?: string }): string {
 // ----- Request builders -----
 //
 // A config is the API request body plus this package's two connection fields.
-// Each builder strips those two — a key in a request body is a leak — and adds
-// the field the model supplies. Nothing is renamed, defaulted or validated:
-// the API is the authority on every option, so an option Tako adds or a limit
-// Tako raises needs no release here. Dates are `Date`s because the generated
-// serializer owns their wire form.
+// Each builder strips those two so its return value is exactly the request
+// type, then adds the field the model supplies. The strip keeps the type
+// honest; it is not the wire guard. The generated serializer allowlists keys,
+// so neither field reaches the body through the client either way — which is
+// why a test inspecting a stubbed fetch cannot prove the strip works.
+// `tests/request.test.ts` asserts the builder's return value, which can.
+// Nothing is renamed, defaulted or validated: the API is the authority on
+// every option, so an option Tako adds or a limit Tako raises needs no release
+// here. Dates are `Date`s because the generated serializer owns their wire form.
 
 export function buildSearchRequestBody(config: TakoRetrievalConfig, query: string): SearchRequest {
   const { apiKey: _apiKey, baseUrl: _baseUrl, ...request } = config;
