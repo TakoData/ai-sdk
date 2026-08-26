@@ -5,19 +5,13 @@
 ```bash
 pnpm install
 pnpm test          # vitest (mocked fetch — no live API calls)
-pnpm test:contract # just tests/contract — the API contract suite
 pnpm typecheck     # tsc over src + tests + examples
 pnpm build         # tsup → dist/
 pnpm lint:package  # publint + are-the-types-wrong, against the packed tarball
 pnpm test:package  # install the tarball in a scratch project and use it
 pnpm test:live     # real API calls — needs TAKO_API_KEY, costs money
-pnpm spec:refresh  # re-vendor tests/contract/openapi.yaml from docs.tako.com
+pnpm check:sdk-lag  # fail if npm has a tako-sdk major our range can't reach
 ```
-
-`pnpm test` includes `tests/contract/types.conformance.test.ts`, which shells out
-to a cold `tsc` run, so expect it to take a second or two — much longer than the
-rest of the suite. It is the slowest test and the one that fails if `src/types.ts`
-drifts from the API.
 
 ## Testing what consumers actually install
 
@@ -51,16 +45,12 @@ enough to hide a real failure here.
 
 ## Checking the API itself (`tests/live/`)
 
-Every other suite proves a request body is **legal** against a vendored snapshot of
-the OpenAPI document. None of them prove the API **honors** the option, or that the
-snapshot still matches reality — the gap that let the 2.x types rot for two months
-while every test stayed green.
-
-`tests/live/` closes it from the other side. It sends real requests and validates
-the responses with the same ajv validators the contract suite uses, so **a response
-that stops matching the vendored spec fails even though nothing in this repo
-changed.** That makes it the upstream drift detector the parity tests cannot be:
-those read a pinned snapshot and only move when someone runs `pnpm spec:refresh`.
+`pnpm test` runs against a stubbed `fetch`, so it proves the request bodies this
+package builds and the normalization it applies — not that the API accepts an
+option or still returns the envelope. `tests/live/` sends real requests to check
+that. Whether the API matches its OpenAPI spec is `tako-sdk`'s contract (its
+types are generated from that spec) and the Tako monorepo's conformance suite's
+job; this package doesn't vendor a spec any more.
 
 ```bash
 TAKO_API_KEY=... pnpm test:live
@@ -84,18 +74,32 @@ Two rules for anything you add there:
 2. **Never trigger a billed export.** `quoteOnly` prices one for free, and that is
    the only way this suite touches export pricing.
 
-## Keeping the API contract honest
+## Tracking `tako-sdk`
 
-`tests/contract/` checks this SDK's types against two pinned references: the
-vendored `openapi.yaml` and the `tako-sdk` version in the lockfile. Both are
-snapshots, so **the suite catches a regression in this repo, not a change Tako
-ships.** To check for upstream drift, refresh them and re-run:
+Wire types come from `tako-sdk`, so an API change reaches this package as a
+version bump, not as a hand-edited type:
 
-```bash
-pnpm spec:refresh
-pnpm update tako-sdk --latest
-pnpm test
-```
+1. Dependabot opens a `chore(deps): bump tako-sdk` PR daily when there is one
+   (`.github/dependabot.yml`, scoped to `tako-sdk` only).
+2. `dependabot-automerge.yml` merges a minor or patch bump once `ci` is green.
+3. A major bump stays open. Read the `tako-sdk` changelog, widen the range, fix
+   whatever `pnpm typecheck` and `pnpm test` report, and merge by hand.
+4. `pnpm check:sdk-lag` (in `ci.yml` and the weekly `live.yml`) fails when npm
+   has a `tako-sdk` major the range in `package.json` can't reach, so step 3
+   can't be forgotten.
+
+**When a Dependabot PR is red**, the API changed shape under the tool layer —
+a field this package maps into a request, or a response field it reads. Fix
+`src/request.ts` or the tool in that PR; don't pin the old version.
+
+A `chore(deps)` merge doesn't cut a release. Consumers get the new `tako-sdk` at
+their next install because the range is a caret. This package releases when
+its own tool layer changes.
+
+The Dependabot config waits two days before opening a bump. pnpm 11 enforces a
+24-hour `minimumReleaseAge`, and `pnpm install --frozen-lockfile` rejects a
+lockfile entry published inside that window, so a PR opened any sooner fails
+`ci` on install and never auto-merges.
 
 Examples make live calls; run them manually with keys set in `.env` (see `.env.example`):
 

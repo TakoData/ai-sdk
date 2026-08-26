@@ -200,7 +200,9 @@ import type {
 } from '@takoviz/ai-sdk';
 ```
 
-The types mirror Tako's published OpenAPI document. `tests/contract/` validates them against a vendored copy of that spec and against [`tako-sdk`](https://www.npmjs.com/package/tako-sdk), Tako's official generated client, so a type that stops matching the API fails CI. Both references are pinned snapshots, refreshed by `pnpm spec:refresh` and a `tako-sdk` bump.
+Every wire type is [`tako-sdk`](https://www.npmjs.com/package/tako-sdk)'s, Tako's client generated from the OpenAPI spec, re-exported under the names above. This package declares only its config types and the normalized tool results. When the API adds a field, it appears here as soon as `tako-sdk` publishes — no release of this package needed.
+
+`tako-sdk` is a runtime dependency. It uses the global `fetch` and runs wherever this package does.
 
 If you need the raw wire shapes (where collections are optional, before the tools normalize them), import `TakoSearchResponse`, `TakoAnswerResponse` or `TakoContentsResponse`.
 
@@ -210,6 +212,7 @@ MIT
 
 ## Links
 
+- [Migrating from 3.x](./MIGRATING.md)
 - [Migrating from 2.x](./MIGRATING.md)
 - [Tako documentation](https://docs.tako.com)
 - [Vercel AI SDK](https://sdk.vercel.ai/docs)

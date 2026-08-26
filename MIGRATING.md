@@ -1,5 +1,36 @@
 # Migrating
 
+## 3.x → 4.0
+
+4.0 replaces this package's hand-written copy of Tako's wire types with the
+types from [`tako-sdk`](https://www.npmjs.com/package/tako-sdk), Tako's client
+generated from the OpenAPI spec, and calls the API through that client. **Every
+exported type name is unchanged**, and most 3.x code compiles and runs as is.
+Three things changed underneath:
+
+| 3.x | 4.0 |
+| --- | --- |
+| Response JSON passed through untouched; an undeclared field was present at runtime | The generated decoders copy declared fields only. A field appears once `tako-sdk` knows it — usually within a day of the API change |
+| Zero runtime dependencies | `tako-sdk` is a dependency (`^1.3.0`). It uses the global `fetch` |
+| `TakoCard` and friends declared here | Aliases of `tako-sdk`'s types. If you also depend on `tako-sdk`, make sure both resolve to the same major, or TypeScript sees two `TakoCard`s |
+
+Two decoded values changed shape:
+
+- `content_format` on a contents item is `undefined` where 3.x gave you `null`.
+  The generated decoder maps `null` and an absent key to the same thing, so
+  branch with `== null`, never `=== null`.
+- `citation_number` on a web result is gone. It was never in the OpenAPI spec
+  and the API has never sent it; the 3.x type declared a field that didn't
+  exist.
+
+If you read a response field that isn't in the Tako OpenAPI spec, it's gone.
+Nothing else needs an edit. To use the un-aliased names, import them from
+`tako-sdk` directly:
+
+```ts
+import type { SearchResponse } from "tako-sdk";   // same type as TakoSearchResponse
+```
+
 ## 2.x → 3.0
 
 3.0 realigns this SDK's types with the current Tako API, and opens up the request options 2.x could not reach. Every **change** below is a case where 2.x described something the API no longer does — so if code depended on it, it was already broken at runtime, whatever TypeScript said. The **New options** section at the end is purely additive: nothing there requires an edit to working 2.x code.
