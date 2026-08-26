@@ -1,5 +1,9 @@
 allowBuilds:
   esbuild: true
+# Each entry waives pnpm's 24-hour minimumReleaseAge for one exact version, so
+# a dependency could be added the day it shipped. An entry stops doing anything
+# once that version clears the cutoff; delete one whenever you notice it.
+# `pnpm add` appends here on its own, so the list only grows otherwise.
 minimumReleaseAgeExclude:
   - '@ai-sdk/gateway@4.0.0'
   - '@ai-sdk/openai@4.0.0'

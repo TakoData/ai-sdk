@@ -54,7 +54,9 @@
   "devDependencies": {
     "@ai-sdk/openai": "^4.0.0",
     "@types/node": "^24.10.1",
+    "@types/semver": "^7.8.0",
     "ai": "^7.0.0",
+    "semver": "^7.8.5",
     "tsup": "^8.5.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
