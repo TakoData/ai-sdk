@@ -13,6 +13,16 @@ import type { TakoAnswerConfig, TakoAnswerResult } from "../types";
 export function takoAnswer(
   config: TakoAnswerConfig = {},
 ): Tool<{ query: string }, TakoAnswerResult> {
+  // Fail here, not in `execute`. The API returns 400 for this pair on every
+  // call, and the model that reads an `execute` error can change neither field,
+  // so it retries the same contradiction until the step limit. This is a
+  // contradiction between two fields, not a numeric bound the API should own.
+  if (config.effort === "instant" && config.output_schema) {
+    throw new Error(
+      'output_schema requires effort "fast" or "deep"; Tako returns 400 on "instant". ' +
+        "Drop output_schema, or change effort.",
+    );
+  }
   const client = lazyTakoClient(config);
   return tool({
     description:
