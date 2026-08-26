@@ -31,10 +31,15 @@ takoSearch({
 ```
 
 Build dates with the ISO-string constructor, as shown. A local-time `Date` in
-a UTC+ timezone serializes as the previous day. Nothing validates the value:
-an `Invalid Date` rejects the tool call with `Invalid time value`, naming no
-field, and 3.x's `publishedAfter must be an ISO date` error is gone with the
-string form.
+a UTC+ timezone serializes as the previous day.
+
+Rename the key and convert the value. 3.x took `publishedAfter` as a string, so
+renaming the key and passing the old string through rejects the tool call with
+`value.published_after.toISOString is not a function` — the most likely failure
+of this migration, and the one TypeScript catches for you. Nothing validates
+the value either: an `Invalid Date` rejects with `Invalid time value`, naming no
+field. Both errors reach the model rather than you, and 3.x's
+`publishedAfter must be an ISO date` error is gone with the string form.
 
 Three options are gone from `sources.data`, with no replacement in this
 package: `mode`, which the API documents as having no effect on Tako cards;
@@ -167,7 +172,7 @@ Three payload fields were also missing and are now typed: `records` (for `json_r
 | `TakoCardSourceIndex = 'tako' \| 'web' \| 'connected_data' \| 'tako_deep_v2'` | `TakoSourceIndex = 'data' \| 'web'` |
 | `TakoCardSourceIndexSegment` | **Removed** — never existed in the API |
 | `TakoCardSourcePrivateIndex` | **Removed** — never existed in the API |
-| `TakoKnowledgeCardSource` | `TakoCardSource` (old name kept as a deprecated alias) |
+| `TakoKnowledgeCardSource` | `TakoCardSource` (the alias was kept in 3.0 and removed in 4.0) |
 
 The curated Tako source is `'data'`, not `'tako'`. This one fails silently, so it's worth grepping for:
 
@@ -206,7 +211,7 @@ const downloadable = result.cards.filter((c) => c.exportable);
 
 3.0 adds 16 request options that 2.x could not reach, and covered every property the API's request schemas defined at the time; a contract suite asserted that, and 4.0 replaced it by deriving the config from `tako-sdk` instead. Every option is optional, so no working 2.x call needs editing. The [README](./README.md#configuration) describes the config; this section covers only what a 2.x reader would otherwise get wrong.
 
-**One rename to be aware of.** `TakoCardSourceOptions` is now `TakoDataSourceOptions`, because the data and web sources no longer take the same fields. The old name still works as a deprecated alias, so nothing breaks — but the two are no longer interchangeable, and code that passed one options object to both `sources.data` and `sources.web` will not type-check against the fields added below.
+**One rename to be aware of.** `TakoCardSourceOptions` is now `TakoDataSourceOptions`, because the data and web sources no longer take the same fields. 3.0 kept the old name as a deprecated alias; 4.0 removed it. The two were never interchangeable after this split, and code that passed one options object to both `sources.data` and `sources.web` will not type-check against the per-source fields 3.0 added.
 
 **`content_format` is now two different things.** The response field renamed from `format` (see **Content format** above) is what the API *sends*. There is also now a `contentFormat` **request** option that chooses it. Same concept, opposite direction:
 
@@ -225,9 +230,9 @@ The defaults differ by surface: `json_compact` on `sources.data`, `csv` on `tako
 
 - **`maxRows`** — the fix for the 1000-row documentation error in the **Content format** notes. Every row returned bills at the per-1,000-row rate; there's no free allowance. A value over the 2,000-row ceiling is **clamped, not rejected**, and you are billed for what comes back — so an over-large value yields a short export, a charge, and no error. Check `total_rows` and `truncated`.
 - **`quoteOnly`** — prices an export without fetching or charging. Use it to find the cost before committing. The item's `url` and payload come back null, and the API ignores `mode` and `contentFormat` on a quote.
-- **`strict`** — returns only cards matching a pinned node, so it requires a non-empty `nodeIds`. Setting one without the other throws from `takoSearch()`/`takoAnswer()` at construction rather than failing the request. Node ids come from the `/v1/graph` endpoints, which this SDK does not wrap.
+- **`strict`** — returns only cards matching a pinned node, so it requires a non-empty `nodeIds`. In 3.0, setting one without the other threw from `takoSearch()`/`takoAnswer()` at construction rather than failing the request. Node ids come from the `/v1/graph` endpoints, which this SDK does not wrap. 4.0 removed both options and that throw with them.
 
-**One option is accepted but inert.** `sources.data.mode` is in the API's schema and the API documents it as having no effect on Tako cards. It is exposed for completeness; setting it changes nothing.
+**One option is accepted but inert.** `sources.data.mode` is in the API's schema and the API documents it as having no effect on Tako cards. 3.0 exposed it for completeness; 4.0 stopped exposing it, because setting it changes nothing.
 
 This SDK does not check numeric ranges — the API owns them, so a limit Tako raises works without an SDK release.
 
