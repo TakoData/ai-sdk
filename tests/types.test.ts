@@ -59,7 +59,7 @@ describe("types", () => {
       cost: 0,
       total_rows: 5,
       truncated: false,
-      export_pricing: { baseline_usd: 0.01, row_cpm_usd: 0.5, free_rows: 20, max_rows_ceiling: 2000 },
+      export_pricing: { baseline_usd: 0.01, row_cpm_usd: 0.5, free_rows: 0, max_rows_ceiling: 2000 },
     };
     const res: TakoContentsResult = { contents: [item], request_id: "r" };
     expect(res.contents[0].content_format).toBe("csv");

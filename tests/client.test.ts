@@ -15,6 +15,7 @@ describe("createTakoClient", () => {
     expect(url).toBe("https://e.com/api/v3/search");
     expect(init.method).toBe("POST");
     expect((init.headers as Record<string, string>)["X-API-Key"]).toBe("key");
+    expect((init.headers as Record<string, string>)["Content-Type"]).toBe("application/json");
     expect(JSON.parse(init.body as string)).toEqual({ query: "x" });
   });
 
