@@ -71,7 +71,7 @@ Two rules for anything you add there:
 
 1. **Assert contract, never content.** "A card came back" is stable. "The first
    card is Nvidia revenue" is one ranking change from a false alarm.
-2. **Never trigger a billed export.** `quoteOnly` prices one for free, and that is
+2. **Never trigger a billed export.** `quote_only` prices one for free, and that is
    the only way this suite touches export pricing.
 
 ## Tracking `tako-sdk`

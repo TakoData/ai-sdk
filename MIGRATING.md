@@ -4,8 +4,55 @@
 
 4.0 replaces this package's hand-written copy of Tako's wire types with the
 types from [`tako-sdk`](https://www.npmjs.com/package/tako-sdk), Tako's client
-generated from the OpenAPI spec, and calls the API through that client. **Every
-exported type name is unchanged**, and most 3.x code compiles and runs as is.
+generated from the OpenAPI spec, and calls the API through that client. The
+response type names are unchanged. **The config changed shape**, and that is
+the edit most 3.x code needs:
+
+### Config keys are the API's own names
+
+Every config key is now the snake_case name the API uses, and the two date
+fields take a `Date`. `TakoRetrievalConfig` is `SearchRequest` without `query`;
+`TakoContentsConfig` is `ContentsRequest` without `url`. The rule is mechanical:
+
+```ts
+// 3.x
+takoSearch({
+  countryCode: "US",
+  sources: { data: { count: 10, includeContents: true }, web: { publishedAfter: "2026-01-01" } },
+  outputSettings: { imageDarkMode: true },
+});
+
+// 4.0
+takoSearch({
+  country_code: "US",
+  sources: { data: { count: 10, include_contents: true }, web: { published_after: new Date("2026-01-01") } },
+  output_settings: { image_dark_mode: true },
+});
+```
+
+Build dates with the ISO-string constructor, as shown. A local-time `Date` in
+a UTC+ timezone serializes as the previous day.
+
+Three options are gone from `sources.data`, with no replacement in this
+package: `mode`, which the API documents as having no effect on Tako cards;
+and `nodeIds` with `strict`, which take graph ids from endpoints this package
+doesn't wrap. To pin nodes, call `POST /api/v3/search` through `tako-sdk`
+directly. The construction-time throw for `strict` without `nodeIds` is gone
+with the options.
+
+Removed aliases: `sources.tako` (use `sources.data`), `TakoCardSourceOptions`
+(use `TakoDataSourceOptions`), `TakoKnowledgeCardSource` (use
+`TakoCardSource`), `TakoCardSourceIndex` (use `TakoSourceIndex`),
+`TakoSourceOptions` and `TakoGeoLocation` (both were config-only helpers with
+no SDK counterpart).
+
+New: `takoAnswer` takes `TakoAnswerConfig`, which adds `output_schema` for
+structured output, and every option `tako-sdk` declares is reachable —
+including `include_related`, `sources.data.max_rows` and
+`sources.web.highlights`, which 3.x had no key for.
+
+### Runtime and response changes
+
 Three things changed underneath:
 
 | 3.x | 4.0 |
