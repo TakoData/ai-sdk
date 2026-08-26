@@ -1,9 +1,16 @@
 import type {
+  ContentsRequest,
+  DataSourceSettings,
+  GeoLocation,
+  OutputSettings,
+  SearchRequest,
+  Sources,
+  WebSourceSettings,
+} from "tako-sdk";
+import type {
   TakoAnswerResponse,
   TakoAnswerResult,
-  TakoContentFormat,
   TakoContentsConfig,
-  TakoContentsMode,
   TakoContentsResponse,
   TakoContentsResult,
   TakoDataSourceOptions,
@@ -11,7 +18,6 @@ import type {
   TakoRetrievalConfig,
   TakoSearchResponse,
   TakoSearchResult,
-  TakoWebCategory,
   TakoWebSourceOptions,
 } from "./types";
 
@@ -25,27 +31,18 @@ export function resolveBaseUrl(config: { baseUrl?: string }): string {
   return (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
 }
 
-export interface SearchRequestBody {
-  query: string;
-  effort?: string;
-  country_code?: string;
-  locale?: string;
-  sources?: { data?: DataSourceSettingsBody; web?: WebSourceSettingsBody };
-  location?: GeoLocationBody;
-  timezone?: string;
-  output_settings?: OutputSettingsBody;
-}
-
-export interface WebSourceSettingsBody {
-  count?: number;
-  include_contents?: boolean;
-  category?: TakoWebCategory;
-  include_domains?: string[];
-  exclude_domains?: string[];
-  snippet_max_chars?: number;
-  article_content_max_chars?: number;
-  published_after?: string;
-  published_before?: string;
+/**
+ * Parse a `YYYY-MM-DD` option into the `Date` the generated request type
+ * carries. `WebSourceSettingsToJSON` serializes it back as
+ * `toISOString().substring(0, 10)`; `new Date("YYYY-MM-DD")` is UTC midnight,
+ * so the wire value equals the input.
+ */
+function isoDate(value: string, name: string): Date {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(value) : new Date(NaN);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`${name} must be an ISO date "YYYY-MM-DD", got ${JSON.stringify(value)}`);
+  }
+  return date;
 }
 
 /**
@@ -54,8 +51,8 @@ export interface WebSourceSettingsBody {
  * Numeric bounds are deliberately not checked here. The schema carries them and
  * the API enforces them, so a limit raised by Tako needs no release of this SDK.
  */
-export function buildWebSourceSettings(o: TakoWebSourceOptions): WebSourceSettingsBody {
-  const body: WebSourceSettingsBody = {};
+export function buildWebSourceSettings(o: TakoWebSourceOptions): WebSourceSettings {
+  const body: WebSourceSettings = {};
   if (o.count !== undefined) body.count = o.count;
   if (o.includeContents !== undefined) body.include_contents = o.includeContents;
   if (o.category !== undefined) body.category = o.category;
@@ -65,18 +62,9 @@ export function buildWebSourceSettings(o: TakoWebSourceOptions): WebSourceSettin
   if (o.articleContentMaxChars !== undefined) {
     body.article_content_max_chars = o.articleContentMaxChars;
   }
-  if (o.publishedAfter !== undefined) body.published_after = o.publishedAfter;
-  if (o.publishedBefore !== undefined) body.published_before = o.publishedBefore;
+  if (o.publishedAfter !== undefined) body.published_after = isoDate(o.publishedAfter, "publishedAfter");
+  if (o.publishedBefore !== undefined) body.published_before = isoDate(o.publishedBefore, "publishedBefore");
   return body;
-}
-
-export interface DataSourceSettingsBody {
-  count?: number;
-  include_contents?: boolean;
-  mode?: TakoContentsMode;
-  content_format?: TakoContentFormat;
-  node_ids?: string[];
-  strict?: boolean;
 }
 
 /**
@@ -112,9 +100,9 @@ export function assertValidRetrievalConfig(config: TakoRetrievalConfig): void {
 }
 
 /** Map data source options to the API's `DataSourceSettings`. */
-export function buildDataSourceSettings(o: TakoDataSourceOptions): DataSourceSettingsBody {
+export function buildDataSourceSettings(o: TakoDataSourceOptions): DataSourceSettings {
   assertValidDataSourceOptions(o);
-  const body: DataSourceSettingsBody = {};
+  const body: DataSourceSettings = {};
   if (o.count !== undefined) body.count = o.count;
   if (o.includeContents !== undefined) body.include_contents = o.includeContents;
   if (o.mode !== undefined) body.mode = o.mode;
@@ -124,26 +112,16 @@ export function buildDataSourceSettings(o: TakoDataSourceOptions): DataSourceSet
   return body;
 }
 
-export interface GeoLocationBody {
-  latitude: number;
-  longitude: number;
-}
-
 /** Map end-user coordinates to the API's `GeoLocation`. Both keys are required. */
-export function buildGeoLocation(o: TakoGeoLocation): GeoLocationBody {
+export function buildGeoLocation(o: TakoGeoLocation): GeoLocation {
   return { latitude: o.latitude, longitude: o.longitude };
-}
-
-export interface OutputSettingsBody {
-  image_dark_mode?: boolean;
-  force_refresh?: boolean;
 }
 
 /** Map output options to the API's `OutputSettings`. */
 export function buildOutputSettings(
   o: NonNullable<TakoRetrievalConfig["outputSettings"]>,
-): OutputSettingsBody {
-  const body: OutputSettingsBody = {};
+): OutputSettings {
+  const body: OutputSettings = {};
   if (o.imageDarkMode !== undefined) body.image_dark_mode = o.imageDarkMode;
   if (o.forceRefresh !== undefined) body.force_refresh = o.forceRefresh;
   return body;
@@ -161,15 +139,15 @@ export function buildOutputSettings(
 export function buildSearchRequestBody(
   config: TakoRetrievalConfig,
   query: string,
-): SearchRequestBody {
-  const body: SearchRequestBody = { query };
+): SearchRequest {
+  const body: SearchRequest = { query };
 
   if (config.effort !== undefined) body.effort = config.effort;
   if (config.countryCode !== undefined) body.country_code = config.countryCode;
   if (config.locale !== undefined) body.locale = config.locale;
 
   if (config.sources) {
-    const sources: NonNullable<SearchRequestBody["sources"]> = {};
+    const sources: Sources = {};
     // `data` is the curated Tako source; `tako` is the deprecated legacy alias.
     const dataSource = config.sources.data ?? config.sources.tako;
     if (dataSource) sources.data = buildDataSourceSettings(dataSource);
@@ -184,15 +162,6 @@ export function buildSearchRequestBody(
   return body;
 }
 
-export interface ContentsRequestBody {
-  url: string;
-  mode: TakoContentsMode;
-  content_format?: TakoContentFormat;
-  max_rows?: number;
-  max_chars?: number;
-  quote_only?: boolean;
-}
-
 /**
  * Map a url + contents config to the POST body the contents endpoint expects.
  *
@@ -202,8 +171,8 @@ export interface ContentsRequestBody {
 export function buildContentsRequestBody(
   url: string,
   config: TakoContentsConfig,
-): ContentsRequestBody {
-  const body: ContentsRequestBody = { url, mode: config.mode ?? "url" };
+): ContentsRequest {
+  const body: ContentsRequest = { url, mode: config.mode ?? "url" };
   if (config.contentFormat !== undefined) body.content_format = config.contentFormat;
   if (config.maxRows !== undefined) body.max_rows = config.maxRows;
   if (config.maxChars !== undefined) body.max_chars = config.maxChars;
