@@ -11,7 +11,7 @@ updates:
       - dependency-name: tako-sdk
     # Wait out pnpm's supply-chain cooldown before opening the PR. pnpm 11
     # enforces a 24-hour minimumReleaseAge, and `pnpm install --frozen-lockfile`
-    # REJECTS a lockfile entry published inside that window
+    # rejects a lockfile entry published inside that window
     # (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION). A PR opened minutes after a
     # tako-sdk release therefore goes red on install, and that red says nothing
     # about whether the new SDK broke this package — which is the whole reason
