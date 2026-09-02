@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.0.0](https://github.com/TakoData/ai-sdk/compare/ai-sdk-v3.0.0...ai-sdk-v4.0.0) (2026-08-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* config is the endpoint's request type, not a hand-maintained copy ([#16](https://github.com/TakoData/ai-sdk/issues/16))
+* depend on tako-sdk so the wire types stop drifting from the API ([#14](https://github.com/TakoData/ai-sdk/issues/14))
+
+### Features
+
+* config is the endpoint's request type, not a hand-maintained copy ([#16](https://github.com/TakoData/ai-sdk/issues/16)) ([716cf1a](https://github.com/TakoData/ai-sdk/commit/716cf1ae1e4b4629e8ee03d0ef8984d54026e93a))
+* depend on tako-sdk so the wire types stop drifting from the API ([#14](https://github.com/TakoData/ai-sdk/issues/14)) ([3b51b10](https://github.com/TakoData/ai-sdk/commit/3b51b10f5254be8537ecb7d6aa52dfe9a569244d))
+
 ## [3.0.0](https://github.com/TakoData/ai-sdk/compare/ai-sdk-v2.0.1...ai-sdk-v3.0.0) (2026-08-04)
 
 
