@@ -13,7 +13,7 @@ export function createTakoClient(config: TakoBaseConfig): Tako {
   if (!apiKey) {
     throw new Error("TAKO_API_KEY is required. Set it in environment variables or pass it in config.");
   }
-  return new Tako({ apiKey, basePath: `${resolveBaseUrl(config)}/api` });
+  return new Tako({ apiKey, basePath: `${resolveBaseUrl(config)}/api`, channel: "ai_sdk" });
 }
 
 /**

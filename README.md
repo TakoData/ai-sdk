@@ -118,6 +118,13 @@ Leave `mode` unset and the API chooses — `'url'` today. This package sends no 
 
 `max_rows` fails quietly: a value over the 2,000-row ceiling is clamped, not rejected, and every row returned is billed. Read `total_rows` and `truncated` on the item to see what you got.
 
+### Caller channel
+
+Requests report `X-Tako-Caller: channel=ai_sdk` so Tako can measure this
+integration's share of API traffic. The header carries the channel name and the
+version of the underlying `tako-sdk` client that makes the call — nothing about you
+or your query — and it has no effect on what a request returns or how it is billed.
+
 ## Responses
 
 `takoSearch` resolves to:
