@@ -66,7 +66,7 @@ Three things changed underneath:
 | 3.x | 4.0 |
 | --- | --- |
 | Response JSON passed through untouched; an undeclared field was present at runtime | The generated decoders copy declared fields only. A field appears once `tako-sdk` knows it — usually within a day of the API change |
-| Zero runtime dependencies | `tako-sdk` is a dependency (`^1.3.0`). It uses the global `fetch` |
+| Zero runtime dependencies | `tako-sdk` is a dependency (`^1.4.0`). It uses the global `fetch` |
 | `TakoCard` and friends declared here | Aliases of `tako-sdk`'s types. If you also depend on `tako-sdk`, make sure both resolve to the same major, or TypeScript sees two `TakoCard`s |
 
 Two decoded values changed shape:
