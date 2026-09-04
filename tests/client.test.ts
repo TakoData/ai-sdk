@@ -19,6 +19,15 @@ describe("createTakoClient", () => {
     expect(JSON.parse(init.body as string)).toEqual({ query: "x" });
   });
 
+  it("stamps the ai_sdk caller channel on the request", async () => {
+    const fetchMock = stubFetch(200, JSON.stringify({ request_id: "r" }));
+    const client = createTakoClient({ apiKey: "key" });
+    await client.search({ query: "US GDP growth rate" });
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers["X-Tako-Caller"]).toMatch(/^channel=ai_sdk, client_version="\d+\.\d+\.\d+"$/);
+  });
+
   it("throws before any request when no key resolves", () => {
     const saved = { k: process.env.TAKO_API_KEY, t: process.env.TAKO_API_TOKEN };
     delete process.env.TAKO_API_KEY;
