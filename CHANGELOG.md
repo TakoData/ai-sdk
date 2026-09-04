@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.0](https://github.com/TakoData/ai-sdk/compare/ai-sdk-v4.0.0...ai-sdk-v4.1.0) (2026-09-04)
+
+
+### Features
+
+* label Vercel AI SDK traffic with channel=ai_sdk ([#18](https://github.com/TakoData/ai-sdk/issues/18)) ([381a64d](https://github.com/TakoData/ai-sdk/commit/381a64d2987cc4eea793a33a5e4ab54bafcc38ef))
+
 ## [4.0.0](https://github.com/TakoData/ai-sdk/compare/ai-sdk-v3.0.0...ai-sdk-v4.0.0) (2026-08-26)
 
 
