@@ -10,7 +10,7 @@ importers:
     dependencies:
       tako-sdk:
         specifier: ^1.4.0
-        version: 1.4.0
+        version: 1.4.2
       zod:
         specifier: ^4.0.0
         version: 4.4.3
@@ -820,8 +820,8 @@ packages:
     engines: {node: '>=16 || 14 >=14.17'}
     hasBin: true
 
-  tako-sdk@1.4.0:
-    resolution: {integrity: sha512-8LhFm7vb5ic8AIE3HPTdqxhPAn8wBmskWVOG/h3yvNhO9vLj3+WOTolPFdsQJ4UjNLQ/Kpr5PutSkLVJX1fqgg==}
+  tako-sdk@1.4.2:
+    resolution: {integrity: sha512-6+bnHE+25Q/wTiwrF/7kM4nfXj7/RPj0RXNdCp+WXnxcHUiR6vqcnWRg6sXMxXWJwxg2PCe6TvByKhJUL8TViQ==}
     engines: {node: '>=18'}
 
   thenify-all@1.6.0:
@@ -1571,7 +1571,7 @@ snapshots:
       tinyglobby: 0.2.17
       ts-interface-checker: 0.1.13
 
-  tako-sdk@1.4.0: {}
+  tako-sdk@1.4.2: {}
 
   thenify-all@1.6.0:
     dependencies:
