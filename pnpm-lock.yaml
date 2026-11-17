@@ -10,7 +10,7 @@ importers:
     dependencies:
       tako-sdk:
         specifier: ^1.4.0
-        version: 1.4.10
+        version: 1.5.5
       zod:
         specifier: ^4.0.0
         version: 4.4.3
@@ -725,8 +725,8 @@ packages:
   mz@2.7.0:
     resolution: {integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==}
 
-  nanoid@3.3.19:
-    resolution: {integrity: sha512-Y2tUNy4ouw6tq5oDSKeQYGOyhkUBhNOcGV/02KC+6kd9eDGqdZd++mjMiIDilrBYvjEnCYvVtsuHCuP+okSfug==}
+  nanoid@3.3.20:
+    resolution: {integrity: sha512-uKdg2G3GNCKQn9byYOpxbGqrT2fGO5KRt5J/8b3pok8rT6qxGWF6hxMyJiEYtAf+FVyYuD9hRaDqX5uPFYJ4ZQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
@@ -820,8 +820,8 @@ packages:
     engines: {node: '>=16 || 14 >=14.17'}
     hasBin: true
 
-  tako-sdk@1.4.10:
-    resolution: {integrity: sha512-RMDEhzfvS/nbBSyTGrwNHBZ5K3+PxNmoKoVmSwwjw/9DlUsXiRXZqzLkZH+Nz6Athi1z6F5BGlg9ugjQt5RVFg==}
+  tako-sdk@1.5.5:
+    resolution: {integrity: sha512-02EW5MDtPPkCnj9lQHaFA5m9X3fha+Vr/cPsWM/tvd50NCsOOpnROSPaHlpWjFT0r8bug0Ri6L8zeCwCfYzFlw==}
     engines: {node: '>=18'}
 
   thenify-all@1.6.0:
@@ -1476,7 +1476,7 @@ snapshots:
       object-assign: 4.1.1
       thenify-all: 1.6.0
 
-  nanoid@3.3.19: {}
+  nanoid@3.3.20: {}
 
   object-assign@4.1.1: {}
 
@@ -1506,7 +1506,7 @@ snapshots:
 
   postcss@8.5.15:
     dependencies:
-      nanoid: 3.3.19
+      nanoid: 3.3.20
       picocolors: 1.1.1
       source-map-js: 1.2.2
 
@@ -1571,7 +1571,7 @@ snapshots:
       tinyglobby: 0.2.17
       ts-interface-checker: 0.1.13
 
-  tako-sdk@1.4.10: {}
+  tako-sdk@1.5.5: {}
 
   thenify-all@1.6.0:
     dependencies:
