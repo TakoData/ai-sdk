@@ -23,7 +23,9 @@ describe("wire types are tako-sdk's, not copies", () => {
     expectTypeOf<TakoSearchResponse>().toEqualTypeOf<SearchResponse>();
     expectTypeOf<TakoCard>().toEqualTypeOf<SdkTakoCard>();
     expectTypeOf<TakoDatasetCell>().toEqualTypeOf<SdkCell>();
-    expectTypeOf<TakoDatasetCell>().toEqualTypeOf<string | number | boolean | null>();
+    expectTypeOf<TakoDatasetCell>().toEqualTypeOf<
+      Array<{ [key: string]: any }> | string | number | boolean | null
+    >();
   });
 
   it("string literals still satisfy the enum aliases", () => {
@@ -48,7 +50,7 @@ describe("wire types are tako-sdk's, not copies", () => {
     expectTypeOf<TakoSourceIndex>().toEqualTypeOf<"data" | "web">();
     expectTypeOf<TakoKnowledgeCardRelevance>().toEqualTypeOf<"High" | "Medium" | "Low">();
     expectTypeOf<TakoGraphNodeType>().toEqualTypeOf<"metric" | "entity">();
-    expectTypeOf<TakoDatasetColumnType>().toEqualTypeOf<"string" | "number" | "boolean" | "date" | "datetime">();
+    expectTypeOf<TakoDatasetColumnType>().toEqualTypeOf<"string" | "number" | "boolean" | "date" | "datetime" | "array">();
     expectTypeOf<TakoWebCategory>().toEqualTypeOf<"news" | "sports" | "finance">();
   });
 });

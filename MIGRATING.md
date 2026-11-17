@@ -1,5 +1,18 @@
 # Migrating
 
+## tako-sdk 1.5: array cells
+
+`tako-sdk` 1.5 adds a dataset column type, and this package re-exports both
+types it touches. A consumer resolves 1.5 through the `^1.4.0` range at their
+next install, whatever this package's version, so check for these in your code:
+
+- `TakoDatasetColumnType` gains `"array"`. An exhaustive `switch` over a
+  column's `type` no longer compiles until it handles `"array"`.
+- `TakoDatasetCell` gains `Array<{ [key: string]: any }>`. A cell in an
+  `"array"` column holds a list of objects, not a scalar, so code that formats
+  every cell as a string, number or boolean needs a branch for it. Cells in
+  every other column type are unchanged.
+
 ## 3.x → 4.0
 
 4.0 replaces this package's hand-written copy of Tako's wire types with the
