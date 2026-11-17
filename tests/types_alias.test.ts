@@ -8,10 +8,13 @@ import type {
   TakoDatasetColumnType,
   TakoGraphNodeType,
   TakoKnowledgeCardRelevance,
+  TakoPlaceholderInfo,
+  TakoPlaceholderReason,
   TakoSearchEffort,
   TakoSearchResponse,
   TakoSearchResult,
   TakoSourceIndex,
+  TakoUsageVariableCost,
   TakoWebCategory,
 } from "../src/types";
 
@@ -26,6 +29,15 @@ describe("wire types are tako-sdk's, not copies", () => {
     expectTypeOf<TakoDatasetCell>().toEqualTypeOf<
       Array<{ [key: string]: any }> | string | number | boolean | null
     >();
+  });
+
+  it("pins the shapes 1.5 added to cards and usage", () => {
+    expectTypeOf<TakoPlaceholderInfo>().toEqualTypeOf<{
+      withheld_source: string;
+      reason?: TakoPlaceholderReason;
+    }>();
+    expectTypeOf<TakoCard["placeholder"]>().toEqualTypeOf<TakoPlaceholderInfo | null | undefined>();
+    expectTypeOf<TakoUsageVariableCost>().toEqualTypeOf<{ cost_usd: number }>();
   });
 
   it("string literals still satisfy the enum aliases", () => {
@@ -52,5 +64,6 @@ describe("wire types are tako-sdk's, not copies", () => {
     expectTypeOf<TakoGraphNodeType>().toEqualTypeOf<"metric" | "entity">();
     expectTypeOf<TakoDatasetColumnType>().toEqualTypeOf<"string" | "number" | "boolean" | "date" | "datetime" | "array">();
     expectTypeOf<TakoWebCategory>().toEqualTypeOf<"news" | "sports" | "finance">();
+    expectTypeOf<TakoPlaceholderReason>().toEqualTypeOf<"not_served" | "over_cap">();
   });
 });

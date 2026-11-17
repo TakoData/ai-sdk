@@ -16,6 +16,8 @@ export type TakoGraphNodeType = sdk.GraphNodeType;
 export type TakoDatasetColumnType = sdk.TakoDatasetColumnType;
 /** Web result category. Only "news" filters today; the others are accepted and inert. */
 export type TakoWebCategory = sdk.WebCategory;
+/** Why a placeholder card withholds its data. */
+export type TakoPlaceholderReason = sdk.PlaceholderReason;
 
 // ----- Config -----
 //
@@ -92,6 +94,7 @@ export interface TakoContentsConfig extends TakoBaseConfig, Omit<sdk.ContentsReq
 
 export type TakoUsageCompute = sdk.UsageCompute;
 export type TakoUsageData = sdk.UsageData;
+export type TakoUsageVariableCost = sdk.UsageVariableCost;
 /**
  * Usage for one metered request. As of 2026-08 the API doesn't populate it on
  * search, answer or contents. For per-item pricing today, read
@@ -122,6 +125,8 @@ export type TakoKnowledgeCardMethodology = sdk.KnowledgeCardMethodology;
 export type TakoCardNode = sdk.TakoCardNode;
 export type TakoMetricDefinition = sdk.MetricDefinition;
 export type TakoDataFreshness = sdk.DataFreshness;
+/** Set on a placeholder card: one with a title and no data points. */
+export type TakoPlaceholderInfo = sdk.PlaceholderInfo;
 export type TakoCard = sdk.TakoCard;
 export type TakoWebResult = sdk.WebResult;
 

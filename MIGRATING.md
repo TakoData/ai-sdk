@@ -1,17 +1,36 @@
 # Migrating
 
-## tako-sdk 1.5: array cells
+## tako-sdk 1.5
 
-`tako-sdk` 1.5 adds a dataset column type, and this package re-exports both
-types it touches. A consumer resolves 1.5 through the `^1.4.0` range at their
-next install, whatever this package's version, so check for these in your code:
+`tako-sdk` 1.5 changes types this package re-exports. A consumer resolves 1.5
+through the `^1.4.0` range at their next install, whatever this package's
+version, so check for these in your code:
 
-- `TakoDatasetColumnType` gains `"array"`. An exhaustive `switch` over a
-  column's `type` no longer compiles until it handles `"array"`.
-- `TakoDatasetCell` gains `Array<{ [key: string]: any }>`. A cell in an
-  `"array"` column holds a list of objects, not a scalar, so code that formats
-  every cell as a string, number or boolean needs a branch for it. Cells in
-  every other column type are unchanged.
+- **Array cells.** `TakoDatasetColumnType` gains `"array"`, so an exhaustive
+  `switch` over a column's `type` no longer compiles until it handles
+  `"array"`. `TakoDatasetCell` gains `Array<{ [key: string]: any }>`: a cell in
+  an `"array"` column holds a list of objects, not a scalar, so code that
+  formats every cell as a string, number or boolean needs a branch for it.
+  Cells in every other column type are unchanged.
+- **Placeholder cards.** A card can now carry `placeholder`
+  (`TakoPlaceholderInfo`): it has a title and no data points, because its
+  source charges per request and the response didn't include that source's
+  data. Search returns one when the request sets
+  `sources.data.variable_cost: false`, when the request is paid through the
+  Machine Payments Protocol, and by default for an account that isn't served
+  variable-cost data. `placeholder.reason` is `"not_served"` or `"over_cap"`.
+  Check `card.placeholder` before you read a card's rows; code that reads every
+  card's data gets nothing from one. To get a placeholder's data, pass its URL
+  to `takoContents`.
+- **Variable cost in `usage`.** `TakoUsage` gains `variable_cost`
+  (`TakoUsageVariableCost`, `{ cost_usd }`), and `total_cost_usd` is the sum of
+  whichever of `compute`, `data` and `variable_cost` are present.
+- **New request options.** `sources.data` (`TakoDataSourceOptions`) on the
+  search and answer configs accepts `variable_cost`, to turn off sources priced
+  per unit, and `max_variable_cost_usd`, to cap what a response pays for them.
+  All three configs accept `zdr`. This package passes them to the API
+  unchanged. Search and answer also accept a top-level `variable_cost`, which
+  the API deprecates in favor of `sources.data.variable_cost`.
 
 ## 3.x → 4.0
 

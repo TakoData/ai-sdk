@@ -141,7 +141,7 @@ set or disable it.
   cards: TakoCard[];          // Tako knowledge cards (title, description, image_url, webpage_url, sources, ...)
   web_results: TakoWebResult[];
   request_id: string;
-  usage?: TakoUsage | null;   // { total_cost_usd, compute?, data? } — see note
+  usage?: TakoUsage | null;   // { total_cost_usd, compute?, data?, variable_cost? } — see note
 }
 ```
 
@@ -153,10 +153,11 @@ The API guarantees only `request_id` — the contract permits omitting the colle
 
 ### Reading a card
 
-Two fields are worth knowing about:
+Three fields are worth knowing about:
 
 - **`exportable`** — whether `takoContents` can download that card's data. `false` means don't bother; the call returns 403. `true` is eligibility, not a guarantee, so still handle errors.
 - **`data_freshness`** — `{ data_as_of, last_updated }`, so you can tell how current a number is.
+- **`placeholder`** — set on a card with a title and no data points, because its source charges per request and the response didn't include that source's data. `reason` says why: `not_served` (the request set `sources.data.variable_cost: false`, or the account isn't served variable-cost data) or `over_cap` (the card didn't fit in `sources.data.max_variable_cost_usd`). Null on every card that carries its data. To get a placeholder's data, pass its URL to `takoContents`. See [Migrating to tako-sdk 1.5](./MIGRATING.md#tako-sdk-15).
 
 ### Reading a contents item
 

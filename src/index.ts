@@ -20,10 +20,12 @@ export type {
   TakoGraphNodeType,
   TakoDatasetColumnType,
   TakoWebCategory,
+  TakoPlaceholderReason,
   // Usage
   TakoUsage,
   TakoUsageCompute,
   TakoUsageData,
+  TakoUsageVariableCost,
   // Content payloads
   TakoResultContent,
   TakoContentItem,
@@ -40,6 +42,7 @@ export type {
   TakoCardNode,
   TakoMetricDefinition,
   TakoDataFreshness,
+  TakoPlaceholderInfo,
   TakoWebResult,
   // Wire responses (what the API sends; only request_id is guaranteed)
   TakoSearchResponse,
